@@ -1,33 +1,57 @@
-﻿using client.Forms;
-using System;
+﻿using System.Configuration;
+using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using client.Classes;
-using System.Diagnostics;
+using System.Windows;
+using System.Windows.Input;
+using TaskbarGroupsEx;
+using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.Forms;
 
-namespace client
+namespace TaskbarGroupsEx
 {
-    static class client
+    /// <summary>
+    /// Interaction logic for App.xaml
+    /// </summary>
+    public partial class App : Application
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        
+        public App()
+        {
+            TaskbarGroupsEx.Classes.MainPath.path = Path.GetFullPath(new Uri(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase)).LocalPath);
+            TaskbarGroupsEx.Classes.MainPath.exeString = Path.GetFullPath(new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
+        }
+
         public static string[] arguments = Environment.GetCommandLineArgs();
 
         // Define functions to set AppUserModelID
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
         
-        [STAThread]
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetCursorPos(ref Win32Point pt);
 
-        static void Main()
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct Win32Point
+        {
+            public Int32 X;
+            public Int32 Y;
+        };
+        public static Point GetMousePosition()
+        {
+            var w32Mouse = new Win32Point();
+            GetCursorPos(ref w32Mouse);
+
+            return new Point(w32Mouse.X, w32Mouse.Y);
+        }
+
+        [STAThread]
+        public void EntryPoint(object sender, StartupEventArgs e)
         {
             // Use existing methods to obtain cursor already imported as to not import any extra functions
             // Pass as two variables instead of Point due to Point requiring System.Drawing
-            int cursorX = Cursor.Position.X;
-            int cursorY = Cursor.Position.Y;
+            Point MousePos = GetMousePosition();
 
             // Set the MainPath to the absolute path where the exe is located
             MainPath.path = Path.GetFullPath(new Uri(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase)).LocalPath);
@@ -41,9 +65,6 @@ namespace client
             Directory.CreateDirectory($"{MainPath.path}\\Shortcuts");
 
             System.Runtime.ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
 
             try
             {
@@ -72,13 +93,16 @@ namespace client
                 // Distinguishes each shortcut process from one another to prevent them from stacking with the main application
                 SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.menu."+ arguments[1]);
 
-                Application.Run(new frmMain(arguments[1], cursorX, cursorY));
+                new frmMain(arguments[1], MousePos).ShowDialog();
             } else
             {
                 // See comment above
                 SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.main");
-                Application.Run(new frmClient());
+                new frmClient().ShowDialog();
             }
         }
+
+
     }
+
 }

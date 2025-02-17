@@ -1,0 +1,83 @@
+﻿<Window x:Class="TaskbarGroupsEx.frmGroup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
+        xmlns:local="clr-namespace:TaskbarGroupsEx"
+        mc:Ignorable="d"
+        Title="frmGroup" Height="838" Width="605" Background="#FF1F1F1F" MouseDown="frmGroup_MouseClick">
+    <Grid x:Name="frmGroupGrid">
+        <TextBlock x:Name="lblErrorTitle" HorizontalAlignment="Left" Margin="44,9,0,0" VerticalAlignment="Top" Width="96" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" Visibility="Hidden">Error message</TextBlock>
+        <TextBlock x:Name="lblErrorNum" HorizontalAlignment="Left" Margin="268,9,0,0" VerticalAlignment="Top" Width="241" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Right" Visibility="Hidden">Error message</TextBlock>
+        <TextBox x:Name="txtGroupName" HorizontalAlignment="Left" Margin="48,29,0,0" VerticalAlignment="Top" Width="395" Height="32" Foreground="White" RenderTransformOrigin="0,0" FontSize="21" Background="#00000000" TextChanged="txtGroupName_TextChanged" GotFocus="txtGroupName_GotFocus" LostFocus="txtGroupName_LostFocus">Name the new group...</TextBox>
+        <TextBlock x:Name="lblWith" HorizontalAlignment="Left" Margin="447,23,0,0" VerticalAlignment="Top" Width="64" Height="25" Foreground="White" RenderTransformOrigin="0,0" FontSize="18" TextAlignment="Center">Width:</TextBlock>
+        <TextBlock x:Name="lblNum" HorizontalAlignment="Left" Margin="505,23,0,0" VerticalAlignment="Top" Width="35" Height="25" Foreground="White" RenderTransformOrigin="0,0" FontSize="18" TextAlignment="Center" FontWeight="Bold">6</TextBlock>
+        <Button x:Name="cmdWidthUp" Content="▲" HorizontalAlignment="Left" Margin="515,10,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" Click="cmdWidthUp_Click"/>
+        <Button x:Name="cmdWidthDown" Content="▼" HorizontalAlignment="Left" Margin="515,41,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" Click="cmdWidthDown_Click"/>
+        <Rectangle HorizontalAlignment="Left" Height="1" Margin="45,63,0,0" VerticalAlignment="Top" Width="500" Fill="#FF8F8F8F"/>
+        <Grid x:Name="pnlGroupIcon" Width="495" HorizontalAlignment="Left" VerticalAlignment="Top" Height="86" Margin="49,83,0,0" Background="#FF1F1F1F" MouseDown="cmdAddGroupIcon_Click" AllowDrop="True" Drop="pnlDragDropImg" DragEnter="pnlDragDropEnterImg" DragLeave="pnlDragDropLeaveImg" MouseEnter="pnlGroupIcon_MouseEnter" MouseLeave="pnlGroupIcon_MouseLeave">
+            <Image x:Name="cmdAddGroupIcon" HorizontalAlignment="Left" Height="60" Margin="23,12,0,0" VerticalAlignment="Top" Width="60" Source="/Resource/AddIconWhite.png" MouseDown="cmdAddGroupIcon_Click" MouseEnter="pnlGroupIcon_MouseEnter" MouseLeave="pnlGroupIcon_MouseLeave"/>
+            <TextBlock x:Name="lblAddGroupIcon" HorizontalAlignment="Left" Margin="96,15,0,0" VerticalAlignment="Top" Width="190" Height="30" Foreground="White" RenderTransformOrigin="0,0" Background="#00000000" TextAlignment="Left" FontSize="20">Change group icon</TextBlock>
+            <TextBlock x:Name="lblAddGroupIconDesc" HorizontalAlignment="Left" Margin="99,46,0,0" VerticalAlignment="Top" Width="245" Height="17" Foreground="White" RenderTransformOrigin="0,0" Background="#00000000" TextAlignment="Left" FontSize="11">Select the icon that shows in the taskbar</TextBlock>
+        </Grid>
+        <TextBlock x:Name="lblErrorIcon" HorizontalAlignment="Left" Margin="147,76,0,0" VerticalAlignment="Top" Width="96" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Center" Visibility="Hidden">Error message</TextBlock>
+        <Rectangle HorizontalAlignment="Center" Height="1" Margin="0,184,0,0" VerticalAlignment="Top" Width="500" Fill="#FF8F8F8F"/>
+        <DockPanel Margin="0,200,0,0" Height="350" VerticalAlignment="Top" Grid.Column="1" Grid.RowSpan="1" MaxHeight="350">
+            <ScrollViewer x:Name="pnlScrollViewer" DockPanel.Dock="Top" Height="Auto" MaxHeight="270"  HorizontalAlignment="Center" VerticalAlignment="Top" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="pnlShortcuts" Width="500" Height="Auto">
+                    <!--Rectangle Height="50" Fill="Red" Margin="0,5,0,5" /-->
+                </StackPanel>
+            </ScrollViewer>
+            <Grid x:Name="pnlAddShortcut" Width="415" DockPanel.Dock="Bottom" VerticalAlignment="Top" Height="80" Margin="0,0,0,0" MouseLeftButtonUp="pnlAddShortcut_Click" MouseEnter="pnlAddShortcut_MouseEnter" MouseLeave="pnlAddShortcut_MouseLeave" AllowDrop="True" Drop="pnlDragDropExt" DragEnter="pnlDragDropEnterExt" DragLeave="pnlDragDropLeaveExt">
+                <Image x:Name="image" HorizontalAlignment="Center" Height="35" VerticalAlignment="Top" Width="35" Margin="0,16,0,0" Source="/Resource/AddIconGray.png"/>
+                <TextBlock x:Name="lblErrorShortcut" Margin="0,54,0,0" VerticalAlignment="Top" Width="414" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden">Error message</TextBlock>
+                <TextBlock x:Name="lblAddShortcut" Margin="0,54,0,0" VerticalAlignment="Top" Width="414" Height="19" Foreground="White" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">Add new shortcut</TextBlock>
+            </Grid>
+        </DockPanel>
+        <Grid x:Name="pnlArguments" Width="482" Height="131" Margin="0,544,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Background="#FF1F1F1F" Visibility="Hidden">
+            <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Margin="28,10,0,0" TextWrapping="Wrap" Text="Arguments:" VerticalAlignment="Top" Foreground="White" Width="84" Height="19" FontSize="14" TextAlignment="Center"/>
+            <TextBox x:Name="pnlArgumentTextbox" HorizontalAlignment="Center" Margin="0,33,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="425" Background="#FF333333" Foreground="White" Height="16" Padding="0,-1,0,0" TextChanged="pnlArgumentTextbox_TextChanged" KeyDown="pnlArgumentTextbox_KeyDown"/>
+            <TextBlock x:Name="textBlock1" HorizontalAlignment="Left" Margin="28,61,0,0" TextWrapping="Wrap" Text="Working Directory:" VerticalAlignment="Top" Foreground="White" Width="128" Height="19" FontSize="14" TextAlignment="Center"/>
+            <TextBox x:Name="pnlWorkingDirectory" HorizontalAlignment="Left" Margin="28,85,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="330" Background="#FF333333" Foreground="White" Height="16" Padding="0,-1,0,0" TextChanged="pnlWorkingDirectory_TextChanged"/>
+            <Button x:Name="cmdSelectDirectory" Content="Select Directory" HorizontalAlignment="Left" Margin="367,79,0,0" VerticalAlignment="Top" Width="87" Height="27" Background="#FF4C4C4C" Foreground="White" Click="cmdSelectDirectory_Click"/>
+        </Grid>
+        <Grid x:Name="pnlColor" Width="368" Height="164" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,544,0,0">
+            <RadioButton x:Name="radioDark" Content="Dark Color" HorizontalAlignment="Center" Margin="0,9,0,0" VerticalAlignment="Top" Foreground="White" Width="115" Height="24" FontSize="14" VerticalContentAlignment="Center" Click="radioDark_Click"/>
+            <RadioButton x:Name="radioLight" Content="Light Color" HorizontalAlignment="Center" Margin="0,39,0,0" VerticalAlignment="Top" Foreground="White" Width="115" Height="24" FontSize="14" VerticalContentAlignment="Center" Click="radioLight_Click"/>
+            <RadioButton x:Name="radioCustom" Content="Custom Color" HorizontalAlignment="Center" Margin="0,69,0,0" VerticalAlignment="Top" Foreground="White" Width="115" Height="24" FontSize="14" VerticalContentAlignment="Center" Click="radioCustom_Click"/>
+            <Rectangle x:Name="pnlCustomColor" HorizontalAlignment="Left" Height="18" Margin="242,0,0,0" VerticalAlignment="Center" Width="18" Stroke="#FF5D5D5D" Fill="#FF1F1F1B"/>
+            <TextBlock x:Name="lblOpacityTooltip" HorizontalAlignment="Left" Margin="127,101,0,0" TextWrapping="Wrap" Text="Opacity:" VerticalAlignment="Top" Width="63" Height="20" Foreground="White" FontSize="15" TextAlignment="Center"/>
+            <TextBlock x:Name="lblOpacity" HorizontalAlignment="Left" Margin="185,102,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="35" Height="20" Foreground="White" FontSize="15" TextAlignment="Right"/>
+            <TextBlock x:Name="lblPercent" HorizontalAlignment="Left" Margin="217,102,0,0" TextWrapping="Wrap" Text="%" VerticalAlignment="Top" Width="21" Height="20" Foreground="White" FontSize="15" TextAlignment="Center"/>
+            <Button x:Name="numOpacUp" Content="▲" HorizontalAlignment="Left" Margin="242,97,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" FontStretch="UltraExpanded" Width="12" RenderTransformOrigin="0.5,1" Height="15" VerticalContentAlignment="Bottom" Padding="0,0,0,0" Click="numOpacUp_Click">
+                <Button.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleY="0.6"/>
+                    </TransformGroup>
+                </Button.RenderTransform>
+            </Button>
+            <Button x:Name="numOpacDown" Content="▲" HorizontalAlignment="Left" Margin="242,98,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" FontStretch="UltraExpanded" Width="12" RenderTransformOrigin="0.5,1" Height="15" VerticalContentAlignment="Bottom" Padding="0,0,0,0" Click="numOpacDown_Click">
+                <Button.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleY="-0.6"/>
+                    </TransformGroup>
+                </Button.RenderTransform>
+            </Button>
+            <Rectangle HorizontalAlignment="Left" Height="1" Margin="193,122,0,0" VerticalAlignment="Top" Width="45 " Fill="#FF8F8F8F"/>
+            <CheckBox x:Name="pnlAllowOpenAll" Content="Allow open-all shortcuts (Ctrl + Enter)" HorizontalAlignment="Center" Margin="0,131,0,0" VerticalAlignment="Top" Foreground="White" Width="278" Height="24" FontSize="14" VerticalContentAlignment="Center" Checked="pnlAllowOpenAll_CheckedChanged" Unchecked="pnlAllowOpenAll_CheckedChanged"/>
+        </Grid>
+        <Grid x:Name="pnlEnd" Width="482" Height="44" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,722,0,0" Grid.Column="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition x:Name="clmnDelete" Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="cmdSave" Grid.Column="0" Content="Save" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Height="30" Background="#FF4C4C4C" FontSize="14" VerticalContentAlignment="Center" Foreground="White" Click="cmdSave_Click"/>
+            <Button x:Name="cmdExit" Grid.Column="1" Content="Exit" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Height="30" Background="#FF4C4C4C" FontSize="14" VerticalContentAlignment="Center" Foreground="White" Click="cmdExit_Click"/>
+            <Button x:Name="cmdDelete" Grid.Column="2" Content="Delete" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Height="30" Background="#FF4C4C4C" FontSize="14" VerticalContentAlignment="Center" Foreground="White" Click="cmdDelete_Click"/>
+        </Grid>
+
+
+    </Grid>
+</Window>

@@ -1,36 +1,55 @@
-﻿using client.Classes;
-using client.User_controls;
-using System;
-using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Windows.Data.Json;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
+using System.Text;
+using Windows.Data.Json;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using TaskbarGroupsEx.Classes;
+using System.Diagnostics;
+using System.Windows.Navigation;
 
-namespace client.Forms
+namespace TaskbarGroupsEx
 {
-    public partial class frmClient : Form
+    /// <summary>
+    /// Interaction logic for frmClient.xaml
+    /// </summary>
+    public partial class frmClient : Window
     {
-        private static readonly HttpClient client = new HttpClient();
         public frmClient()
         {
             System.Runtime.ProfileOptimization.StartProfile("frmClient.Profile");
             InitializeComponent();
-            this.MaximumSize = new Size(Screen.PrimaryScreen.WorkingArea.Width, Screen.PrimaryScreen.WorkingArea.Height);
             Reload();
 
-            currentVersion.Text = "v" + System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
+           
+            currentVersion.Text = currentVersion.Text.Replace("{CurrentVersion}", "v" + Assembly.GetEntryAssembly().GetName().Version.ToString());
 
-            githubVersion.Text = Task.Run(() => getVersionData()).Result;
+            githubVersion.Inlines.Clear();
+            githubVersion.Inlines.Add(Task.Run(() => getVersionData()).Result);
         }
         public void Reload()
         {
             // flush and reload existing groups
-            pnlExistingGroups.Controls.Clear();
-            pnlExistingGroups.Height = 0;
+            pnlExistingGroups.Children.Clear();
+            //pnlExistingGroups.Height = 0;
 
             string configPath = @MainPath.path + @"\config";
+            if (!Directory.Exists(configPath))
+            {
+                Directory.CreateDirectory(configPath);
+            }
+
             string[] subDirectories = Directory.GetDirectories(configPath);
             foreach (string dir in subDirectories)
             {
@@ -44,66 +63,50 @@ namespace client.Forms
                 }
             }
 
-            if (pnlExistingGroups.HasChildren) // helper if no group is created
+            if (pnlExistingGroups.Children.Count > 0) // helper if no group is created
             {
                 lblHelpTitle.Text = "Click on a group to add a taskbar shortcut";
-                pnlHelp.Visible = true;
+                pnlHelp.Visibility = Visibility.Hidden;
             }
             else // helper if groups are created
             {
                 lblHelpTitle.Text = "Press on \"Add Taskbar group\" to get started";
-                pnlHelp.Visible = false;
+                pnlHelp.Visibility = Visibility.Hidden;
             }
-            pnlBottomMain.Top = pnlExistingGroups.Bottom + 20; // spacing between existing groups and add new group btn
-
-            Reset();
         }
 
         public void LoadCategory(string dir)
         {
-            Category category = new Category(dir);
-            ucCategoryPanel newCategory = new ucCategoryPanel(this, category);
-            pnlExistingGroups.Height += newCategory.Height;
-            pnlExistingGroups.Controls.Add(newCategory);
-            newCategory.Top = pnlExistingGroups.Height - newCategory.Height;
-            newCategory.Show();
-            newCategory.BringToFront();
-            newCategory.MouseEnter += new System.EventHandler((sender, e) => EnterControl(sender, e, newCategory));
-            newCategory.MouseLeave += new System.EventHandler((sender, e) => LeaveControl(sender, e, newCategory));
+            Classes.Category category = new Classes.Category(dir);
+            ucCatagoryPanel newCategory = new ucCatagoryPanel(this, category);
+            pnlExistingGroups.Children.Add(newCategory);
+            newCategory.MouseEnter += new MouseEventHandler((sender, e) => EnterControl(sender, e, newCategory));
+            newCategory.MouseLeave += new MouseEventHandler((sender, e) => LeaveControl(sender, e, newCategory));
         }
 
-        public void Reset()
-        {
-            if (pnlBottomMain.Bottom > this.Bottom)
-                pnlLeftColumn.Height = pnlBottomMain.Bottom;
-            else
-                pnlLeftColumn.Height = this.RectangleToScreen(this.ClientRectangle).Height; // making left column pnl dynamic
-        }
-
-        private void cmdAddGroup_Click(object sender, EventArgs e)
+        private void cmdAddGroup_Click(object sender, MouseButtonEventArgs e)
         {
             frmGroup newGroup = new frmGroup(this);
             newGroup.Show();
-            newGroup.BringToFront();
         }
 
-        private void pnlAddGroup_MouseLeave(object sender, EventArgs e)
+        private void pnlAddGroup_MouseLeave(object sender, MouseEventArgs e)
         {
-            pnlAddGroup.BackColor = Color.FromArgb(3, 3, 3);
+            pnlAddGroup.Background = new SolidColorBrush(Color.FromArgb(255, 3, 3, 3));
         }
 
-        private void pnlAddGroup_MouseEnter(object sender, EventArgs e)
+        private void pnlAddGroup_MouseEnter(object sender, MouseEventArgs e)
         {
-            pnlAddGroup.BackColor = Color.FromArgb(31, 31, 31);
+            pnlAddGroup.Background = new SolidColorBrush(Color.FromArgb(255, 31, 31, 31));
         }
 
-        public void EnterControl(object sender, EventArgs e, Control control)
+        public void EnterControl(object sender, MouseEventArgs e, Control control)
         {
-            control.BackColor = Color.FromArgb(31, 31, 31);
+            control.Background = new SolidColorBrush(Color.FromArgb(255, 31, 31, 31));
         }
-        public void LeaveControl(object sender, EventArgs e, Control control)
+        public void LeaveControl(object sender, MouseEventArgs e, Control control)
         {
-            control.BackColor = Color.FromArgb(3, 3, 3);
+            control.Background = new SolidColorBrush(Color.FromArgb(255, 3, 3, 3));
         }
 
         private static async Task<String> getVersionData()
@@ -116,21 +119,20 @@ namespace client.Forms
                 res.EnsureSuccessStatusCode();
                 string responseBody = await res.Content.ReadAsStringAsync();
 
-                JsonArray responseJSON = JsonArray.Parse(responseBody);
+                JsonArray responseJSON = (JsonArray)JsonArray.Parse(responseBody);
                 JsonObject jsonObjectData = responseJSON[0].GetObject();
 
                 return jsonObjectData["tag_name"].GetString();
-            } catch {return "Not found";}
+            }
+            catch { return "Not found"; }
         }
 
-        private void githubLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/tjackenpacken/taskbar-groups/releases");
-        }
-
-        private void frmClient_Resize(object sender, EventArgs e)
-        {
-            Reset();
+            ProcessStartInfo proc = new ProcessStartInfo(e.Uri.AbsoluteUri);
+            proc.UseShellExecute = true;
+            Process.Start(proc);
+            e.Handled = true;
         }
     }
 }

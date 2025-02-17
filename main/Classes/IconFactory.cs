@@ -6,8 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     public class IconFactory
     {
@@ -53,7 +55,7 @@ namespace client.Classes
         /// <exception cref="ArgumentNullException">
         /// Occurs if any of the arguments are null.
 
-        public static void SavePngsAsIcon(IEnumerable<Bitmap> images, Stream stream)
+        public static void SavePngsAsIcon(IEnumerable<BitmapSource> images, Stream stream)
         {
             if (images == null)
                 throw new ArgumentNullException("images");
@@ -65,7 +67,7 @@ namespace client.Classes
             IconFactory.ThrowForInvalidPngs(images);
             */
 
-            Bitmap[] orderedImages = images.OrderBy(i => i.Width)
+            BitmapSource[] orderedImages = images.OrderBy(i => i.Width)
                                            .ThenBy(i => i.Height)
                                            .ToArray();
 
@@ -88,7 +90,7 @@ namespace client.Classes
 
                 for (int i = 0; i < orderedImages.Length; i++)
                 {
-                    Bitmap image = orderedImages[i];
+                    BitmapSource image = orderedImages[i];
 
                     // creates a byte array from an image
                     byte[] buffer = IconFactory.CreateImageBuffer(image);
@@ -103,7 +105,7 @@ namespace client.Classes
                     writer.Write(IconFactory.PngColorsInPalette);
                     writer.Write(IconFactory.EntryReserved);
                     writer.Write(IconFactory.PngColorPlanes);
-                    writer.Write((ushort)Image.GetPixelFormatSize(image.PixelFormat));
+                    writer.Write((ushort)image.Format.BitsPerPixel);
                     writer.Write((uint)buffer.Length);
                     writer.Write(offset);
 
@@ -131,11 +133,11 @@ namespace client.Classes
         {
             foreach (var image in images)
             {
-                if (image.PixelFormat != PixelFormat.Format32bppArgb)
+                if (image.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppArgb)
                 {
                     throw new InvalidOperationException
                         (string.Format("Required pixel format is PixelFormat.{0}.",
-                                       PixelFormat.Format32bppArgb.ToString()));
+                                       System.Drawing.Imaging.PixelFormat.Format32bppArgb.ToString()));
                 }
 
                 if (image.RawFormat.Guid != ImageFormat.Png.Guid)
@@ -155,7 +157,7 @@ namespace client.Classes
             }
         }
 
-        private static byte GetIconHeight(Bitmap image)
+        private static byte GetIconHeight(BitmapSource image)
         {
             if (image.Height == IconFactory.MaxIconHeight)
                 return 0;
@@ -163,7 +165,7 @@ namespace client.Classes
             return (byte)image.Height;
         }
 
-        private static byte GetIconWidth(Bitmap image)
+        private static byte GetIconWidth(BitmapSource image)
         {
             if (image.Width == IconFactory.MaxIconWidth)
                 return 0;
@@ -171,13 +173,15 @@ namespace client.Classes
             return (byte)image.Width;
         }
 
-        private static byte[] CreateImageBuffer(Bitmap image)
+        private static byte[] CreateImageBuffer(BitmapSource image)
         {
-            using (var stream = new MemoryStream())
-            {
-                image.Save(stream, ImageFormat.Png);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(image));
 
-                return stream.ToArray();
+            using (var ms = new MemoryStream())
+            {
+                encoder.Save(ms);
+                return ms.ToArray();
             }
         }
 

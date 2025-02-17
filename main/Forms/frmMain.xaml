@@ -1,0 +1,16 @@
+﻿<Window x:Class="TaskbarGroupsEx.Forms.frmMain"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskbarGroupsEx.Forms"
+        mc:Ignorable="d"
+        Title="frmMain" SizeToContent="WidthAndHeight" AllowsTransparency="True" Background="Transparent" Loaded="frmMain_Load" Deactivated="frmMain_Deactivate" KeyDown="frmMain_KeyDown" KeyUp="frmMain_KeyUp" SizeChanged="Window_SizeChanged" WindowStyle="None">
+    <Grid>
+        <Border x:Name="bdrMain"  CornerRadius="5" BorderBrush="#FF313131" Background="Transparent" BorderThickness="1">
+            <WrapPanel x:Name="pnlShortcutIcons" DockPanel.Dock="Left" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <!--Image Width="30" Height="30" HorizontalAlignment="Left" Margin="2,2,2,2" Source="/Resource/AddIconGray.png"></Image-->
+        </WrapPanel>
+    </Border>
+    </Grid>
+</Window>

@@ -1,19 +1,35 @@
-﻿using client.Classes;
-using client.User_controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices.ActiveDirectory;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Xml.Linq;
+using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.User_Controls;
+using WpfScreenHelper;
+using WpfScreenHelper.Enum;
 
-namespace client
+namespace TaskbarGroupsEx.Forms
 {
-
-    public partial class frmMain : Form
+    /// <summary>
+    /// Interaction logic for frmMain.xaml
+    /// </summary>
+    public partial class frmMain : Window
     {
-
+        /*
         // Allow doubleBuffering drawing each frame to memory and then onto screen
         // Solves flickering issues mostly as the entire rendering of the screen is done in 1 operation after being first loaded to memory
         protected override CreateParams CreateParams
@@ -26,52 +42,65 @@ namespace client
                 return cp;
             }
         }
+        */
 
         public Category ThisCategory;
         public List<ucShortcut> ControlList;
-        public Color HoverColor;
+        public System.Windows.Media.Color HoverColor;
 
         private string passedDirec;
-        public Point mouseClick;
+        public System.Windows.Point mouseClick;
+
+        public double Right
+        {
+            get { return this.Left + this.Width; }
+        }
 
         //------------------------------------------------------------------------------------
         // CTOR AND LOAD
         //
-        public frmMain(string passedDirectory, int cursorPosX, int cursorPosY)
+        public frmMain(string passedDirectory, System.Windows.Point cursorPos)
         {
             InitializeComponent();
 
             System.Runtime.ProfileOptimization.StartProfile("frmMain.Profile");
-            mouseClick = new Point(cursorPosX, cursorPosY); // Consstruct point p based on passed x y mouse values
             passedDirec = passedDirectory;
-            FormBorderStyle = FormBorderStyle.None;
+            mouseClick = cursorPos;
+            this.WindowStyle = WindowStyle.None;
 
-            using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(MainPath.path + "\\config\\" + passedDirec + "\\GroupIcon.ico")))
-                this.Icon = new Icon(ms);
+            this.Icon = ImageFunctions.ExtractIconToBitmapSource(MainPath.path + "\\config\\" + passedDirec + "\\GroupIcon.ico");
+            //using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes()))
+             //   this.Icon = new Icon(ms);
 
             if (Directory.Exists(@MainPath.path + @"\config\" + passedDirec))
             {
                 ControlList = new List<ucShortcut>();
 
-                this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+                //this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
                 ThisCategory = new Category($"config\\{passedDirec}");
-                this.BackColor = ImageFunctions.FromString(ThisCategory.ColorString);
-                Opacity = (1 - (ThisCategory.Opacity / 100));
+                bdrMain.Background = new SolidColorBrush(ThisCategory.CatagoryBGColor);
+                System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, 37, 37, 37);
+                bdrMain.BorderBrush = new SolidColorBrush(BorderColor);
+                //Opacity = (1 - (ThisCategory.Opacity / 100));
 
-                if (BackColor.R * 0.2126 + BackColor.G * 0.7152 + BackColor.B * 0.0722 > 255 / 2)
+                //Should be reproducable with a multiple function
+                /*
+                if (ThisCategory.CatagoryBGColor.R * 0.2126 + ThisCategory.CatagoryBGColor.G * 0.7152 + ThisCategory.CatagoryBGColor.B * 0.0722 > 255 / 2)
                     //if backcolor is light, set hover color as darker
-                    HoverColor = Color.FromArgb(BackColor.A, (BackColor.R - 50), (BackColor.G - 50), (BackColor.B - 50));
+                    HoverColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, (ThisCategory.CatagoryBGColor.R - 50), (ThisCategory.CatagoryBGColor.G - 50), (ThisCategory.CatagoryBGColor.B - 50));
                 else
                     //light backcolor is light, set hover color as darker
                     HoverColor = Color.FromArgb(BackColor.A, (BackColor.R + 50), (BackColor.G + 50), (BackColor.B + 50));
+                */
+                HoverColor = System.Windows.Media.Color.Multiply(ThisCategory.CatagoryBGColor, 3.0f);
             }
             else
             {
-                Application.Exit();
+                Application.Current.Shutdown();
             }
         }
 
-        private void frmMain_Load(object sender, EventArgs e)
+        private void frmMain_Load(object sender, RoutedEventArgs e)
         {
             LoadCategory();
             SetLocation();
@@ -80,65 +109,68 @@ namespace client
         // Sets location of form
         private void SetLocation()
         {
-            List<Rectangle> taskbarList = FindDockedTaskBars();
-            Rectangle taskbar = new Rectangle();
-            Rectangle screen = new Rectangle();
+            List<System.Windows.Shapes.Rectangle> taskbarList = FindDockedTaskBars();
+            Rect taskbar = new Rect();
+            Rect screen = new Rect();
+            Rect MouseCursor = new Rect(mouseClick.X, mouseClick.Y, 1.0, 1.0);
 
             int i = 0;
-            int locationy;
-            int locationx;
+            double locationy;
+            double locationx;
             if (taskbarList.Count != 0)
             {
-                foreach (var scr in Screen.AllScreens) // Get what screen user clicked on
+                foreach (Screen scr in Screen.AllScreens) // Get what screen user clicked on
                 {
-                    if (scr.Bounds.Contains(mouseClick))
+                    if (scr.Bounds.Contains(mouseClick.X, mouseClick.Y))
                     {
-                        screen.X = scr.Bounds.X;
-                        screen.Y = scr.Bounds.Y;
-                        screen.Width = scr.Bounds.Width;
-                        screen.Height = scr.Bounds.Height;
-                        taskbar = taskbarList[i];
+                        screen.X = Convert.ToInt32(scr.Bounds.X);
+                        screen.Y = Convert.ToInt32(scr.Bounds.Y);
+                        screen.Width = Convert.ToInt32(scr.Bounds.Width);
+                        screen.Height = Convert.ToInt32(scr.Bounds.Height);
+                        taskbar = new Rect(taskbarList[i].Margin.Left, taskbarList[i].Margin.Top, taskbarList[i].Width, taskbarList[i].Height);
                     }
                     i++;
                 }
 
-                if (taskbar.Contains(mouseClick)) // Click on taskbar
+                if (Rect.Intersect(taskbar, MouseCursor) != Rect.Empty) // Click on taskbar
                 {
                     if (taskbar.Top == screen.Top && taskbar.Width == screen.Width)
                     {
                         // TOP
                         locationy = screen.Y + taskbar.Height + 10;
-                        locationx = mouseClick.X - (this.Width / 2);
+                        locationx = mouseClick.X - (pnlShortcutIcons.Width / 2.0);
                     }
                     else if (taskbar.Bottom == screen.Bottom && taskbar.Width == screen.Width)
                     {
                         // BOTTOM
-                        locationy = screen.Y + screen.Height - this.Height - taskbar.Height - 10;
-                        locationx = mouseClick.X - (this.Width / 2);
+                        locationy = screen.Y + screen.Height - Convert.ToInt32(pnlShortcutIcons.Height) - taskbar.Height - 10;
+                        locationx = mouseClick.X - (pnlShortcutIcons.Width / 2.0);
                     }
                     else if (taskbar.Left == screen.Left)
                     {
                         // LEFT
-                        locationy = mouseClick.Y - (this.Height / 2);
+                        locationy = mouseClick.Y - (pnlShortcutIcons.Height / 2);
                         locationx = screen.X + taskbar.Width + 10;
 
                     }
                     else
                     {
                         // RIGHT
-                        locationy = mouseClick.Y - (this.Height / 2);
-                        locationx = screen.X + screen.Width - this.Width - taskbar.Width - 10;
+                        locationy = mouseClick.Y - (pnlShortcutIcons.Height / 2);
+                        locationx = screen.X + screen.Width - pnlShortcutIcons.Width - taskbar.Width - 10;
                     }
 
                 }
                 else // not click on taskbar
                 {
-                    locationy = mouseClick.Y - this.Height - 20;
-                    locationx = mouseClick.X - (this.Width / 2);
+                    locationy = mouseClick.Y - pnlShortcutIcons.Height - 20;
+                    locationx = mouseClick.X - (pnlShortcutIcons.Width / 2);
 
                 }
 
-                this.Location = new Point(locationx, locationy);
+                //this.Location = new Point(locationx, locationy);
+                this.Left = locationx;
+                this.Top = locationy;
 
                 // If form goes over screen edge
                 if (this.Left < screen.Left)
@@ -149,11 +181,11 @@ namespace client
                     this.Left = screen.Right - this.Width - 10;
 
                 // If form goes over taskbar
-                if (taskbar.Contains(this.Left, this.Top) && taskbar.Contains(this.Right, this.Top)) // Top taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Left), Convert.ToInt32(this.Top)) && taskbar.Contains(Convert.ToInt32(this.Right), Convert.ToInt32(this.Top))) // Top taskbar
                     this.Top = screen.Top + 10 + taskbar.Height;
-                if (taskbar.Contains(this.Left, this.Top)) // Left taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Left), Convert.ToInt32(this.Top))) // Left taskbar
                     this.Left = screen.Left + 10 + taskbar.Width;
-                if (taskbar.Contains(this.Right, this.Top))  // Right taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Right), Convert.ToInt32(this.Top)))  // Right taskbar
                     this.Left = screen.Right - this.Width - 10 - taskbar.Width;
 
             }
@@ -161,12 +193,13 @@ namespace client
             {
                 foreach (var scr in Screen.AllScreens) // get what screen user clicked on
                 {
-                    if (scr.Bounds.Contains(mouseClick))
+                    if (scr.Bounds.Contains(Convert.ToDouble(mouseClick.X), Convert.ToDouble(mouseClick.Y)))
                     {
-                        screen.X = scr.Bounds.X;
-                        screen.Y = scr.Bounds.Y;
-                        screen.Width = scr.Bounds.Width;
-                        screen.Height = scr.Bounds.Height;
+
+                        screen.X = Convert.ToInt32(scr.Bounds.X);
+                        screen.Y = Convert.ToInt32(scr.Bounds.Y);
+                        screen.Width = Convert.ToInt32(scr.Bounds.Width);
+                        screen.Height = Convert.ToInt32(scr.Bounds.Height);
                     }
                     i++;
                 }
@@ -177,7 +210,9 @@ namespace client
                     locationy = mouseClick.Y - this.Height - 20;
                 locationx = mouseClick.X - (this.Width / 2);
 
-                this.Location = new Point(locationx, locationy);
+                //this.Location = new Point(locationx, locationy);
+                this.Left = locationx;
+                this.Top = locationy;
 
                 // If form goes over screen edge
                 if (this.Left < screen.Left)
@@ -188,23 +223,23 @@ namespace client
                     this.Left = screen.Right - this.Width - 10;
 
                 // If form goes over taskbar
-                if (taskbar.Contains(this.Left, this.Top) && taskbar.Contains(this.Right, this.Top)) // Top taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Left), Convert.ToInt32(this.Top)) && taskbar.Contains(Convert.ToInt32(this.Right), Convert.ToInt32(this.Top))) // Top taskbar
                     this.Top = screen.Top + 10 + taskbar.Height;
-                if (taskbar.Contains(this.Left, this.Top)) // Left taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Left), Convert.ToInt32(this.Top))) // Left taskbar
                     this.Left = screen.Left + 10 + taskbar.Width;
-                if (taskbar.Contains(this.Right, this.Top))  // Right taskbar
+                if (taskbar.Contains(Convert.ToInt32(this.Right), Convert.ToInt32(this.Top)))  // Right taskbar
                     this.Left = screen.Right - this.Width - 10 - taskbar.Width;
             }
         }
         // Search for active taskbars on screen
-        public static List<Rectangle> FindDockedTaskBars()
+        public static List<System.Windows.Shapes.Rectangle> FindDockedTaskBars()
         {
-            List<Rectangle> dockedRects = new List<Rectangle>();
+            List<System.Windows.Shapes.Rectangle> dockedRects = new List<System.Windows.Shapes.Rectangle>();
             foreach (var tmpScrn in Screen.AllScreens)
             {
                 if (!tmpScrn.Bounds.Equals(tmpScrn.WorkingArea))
                 {
-                    Rectangle rect = new Rectangle();
+                    System.Windows.Shapes.Rectangle rect = new System.Windows.Shapes.Rectangle();
 
                     var leftDockedWidth = Math.Abs((Math.Abs(tmpScrn.Bounds.Left) - Math.Abs(tmpScrn.WorkingArea.Left)));
                     var topDockedHeight = Math.Abs((Math.Abs(tmpScrn.Bounds.Top) - Math.Abs(tmpScrn.WorkingArea.Top)));
@@ -212,29 +247,25 @@ namespace client
                     var bottomDockedHeight = ((tmpScrn.Bounds.Height - topDockedHeight) - tmpScrn.WorkingArea.Height);
                     if ((leftDockedWidth > 0))
                     {
-                        rect.X = tmpScrn.Bounds.Left;
-                        rect.Y = tmpScrn.Bounds.Top;
+                        rect.Margin = new Thickness(tmpScrn.Bounds.Left,tmpScrn.Bounds.Top,0,0);
                         rect.Width = leftDockedWidth;
                         rect.Height = tmpScrn.Bounds.Height;
                     }
                     else if ((rightDockedWidth > 0))
                     {
-                        rect.X = tmpScrn.WorkingArea.Right;
-                        rect.Y = tmpScrn.Bounds.Top;
+                        rect.Margin = new Thickness(tmpScrn.WorkingArea.Right, tmpScrn.Bounds.Top, 0, 0);
                         rect.Width = rightDockedWidth;
                         rect.Height = tmpScrn.Bounds.Height;
                     }
                     else if ((topDockedHeight > 0))
                     {
-                        rect.X = tmpScrn.WorkingArea.Left;
-                        rect.Y = tmpScrn.Bounds.Top;
+                        rect.Margin = new Thickness(tmpScrn.WorkingArea.Left, tmpScrn.Bounds.Top, 0, 0);
                         rect.Width = tmpScrn.WorkingArea.Width;
                         rect.Height = topDockedHeight;
                     }
                     else if ((bottomDockedHeight > 0))
                     {
-                        rect.X = tmpScrn.WorkingArea.Left;
-                        rect.Y = tmpScrn.WorkingArea.Bottom;
+                        rect.Margin = new Thickness(tmpScrn.WorkingArea.Left, tmpScrn.WorkingArea.Bottom, 0, 0);
                         rect.Width = tmpScrn.WorkingArea.Width;
                         rect.Height = bottomDockedHeight;
                     }
@@ -263,8 +294,8 @@ namespace client
         {
             //System.Diagnostics.Debugger.Launch();
 
-            this.Width = 0;
-            this.Height = 45;
+            //this.Width = 0;
+            //this.Height = 45;
             int x = 0;
             int y = 0;
             int width = ThisCategory.Width;
@@ -277,9 +308,14 @@ namespace client
                 ThisCategory.cacheIcons();
             }
 
+            double columnCount = Math.Ceiling((double)ThisCategory.ShortcutList.Count / ThisCategory.Width);
+            pnlShortcutIcons.Height = columnCount * 45 ;
+            pnlShortcutIcons.Width = (ThisCategory.Width * 55);
+
             foreach (ProgramShortcut psc in ThisCategory.ShortcutList)
             {
 
+                /*
                 if (columns > width)  // creating new row if there are more psc than max width
                 {
                     x = 0;
@@ -290,31 +326,33 @@ namespace client
 
                 if (this.Width < ((width * 55)))
                     this.Width += (55);
-
+                */
                 // OLD
                 //BuildShortcutPanel(x, y, psc);
-                
+
                 // Building shortcut controls
-                ucShortcut pscPanel = new ucShortcut() 
+                ucShortcut pscPanel = new ucShortcut()
                 {
-                    Psc = psc, 
-                    MotherForm = this, 
-                    ThisCategory = ThisCategory 
+                    Psc = psc,
+                    MotherForm = this,
+                    ThisCategory = ThisCategory,
                 };
-                pscPanel.Location = new System.Drawing.Point(x, y);
-                this.Controls.Add(pscPanel);
+                //pscPanel.Location = new System.Drawing.Point(x, y);
+                //pscPanel.Margin = new Thickness(x, y,0,0);
+                pnlShortcutIcons.Children.Add(pscPanel);
                 this.ControlList.Add(pscPanel);
-                pscPanel.Show();
-                pscPanel.BringToFront();
+                //pscPanel.Show();
+                //pscPanel.BringToFront();
 
                 // Reset values
                 x += 55;
-                columns++;
+                //columns++;
             }
 
-            this.Width -= 2; // For some reason the width is 2 pixels larger than the shortcuts. Temporary fix
+            //this.Width -= 2; // For some reason the width is 2 pixels larger than the shortcuts. Temporary fix
         }
 
+        /*
         // OLD (Having some issues with the uc build, so keeping the old code below)
         private void BuildShortcutPanel(int x, int y, ProgramShortcut psc)
         {
@@ -333,6 +371,7 @@ namespace client
             this.shortcutPic.MouseEnter += new System.EventHandler((sender, e) => this.shortcutPanel.BackColor = Color.Black);
             this.shortcutPic.MouseLeave += new System.EventHandler((sender, e) => this.shortcutPanel.BackColor = System.Drawing.Color.Transparent);
         }
+        */
 
         // Click handler for shortcuts
         public void OpenFile(string arguments, string path, string workingDirec)
@@ -342,6 +381,7 @@ namespace client
             proc.Arguments = arguments;
             proc.FileName = path;
             proc.WorkingDirectory = workingDirec;
+            proc.UseShellExecute = true;
 
             /*
             proc.EnableRaisingEvents = false;
@@ -368,41 +408,40 @@ namespace client
         // Keyboard shortcut handlers
         private void frmMain_KeyDown(object sender, KeyEventArgs e)
         {
-
             try
             {
-                switch (e.KeyCode)
+                switch (e.Key)
                 {
 
-                    case Keys.D1:
-                        ControlList[0].ucShortcut_MouseEnter(sender, e);
+                    case Key.D1:
+                        ControlList[0].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D2:
-                        ControlList[1].ucShortcut_MouseEnter(sender, e);
+                    case Key.D2:
+                        ControlList[1].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D3:
-                        ControlList[2].ucShortcut_MouseEnter(sender, e);
+                    case Key.D3:
+                        ControlList[2].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D4:
-                        ControlList[3].ucShortcut_MouseEnter(sender, e);
+                    case Key.D4:
+                        ControlList[3].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D5:
-                        ControlList[4].ucShortcut_MouseEnter(sender, e);
+                    case Key.D5:
+                        ControlList[4].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D6:
-                        ControlList[5].ucShortcut_MouseEnter(sender, e);
+                    case Key.D6:
+                        ControlList[5].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D7:
-                        ControlList[6].ucShortcut_MouseEnter(sender, e);
+                    case Key.D7:
+                        ControlList[6].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D8:
-                        ControlList[7].ucShortcut_MouseEnter(sender, e);
+                    case Key.D8:
+                        ControlList[7].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D9:
-                        ControlList[8].ucShortcut_MouseEnter(sender, e);
+                    case Key.D9:
+                        ControlList[8].ucShortcut_OnMouseEnter();
                         break;
-                    case Keys.D0:
-                        ControlList[9].ucShortcut_MouseEnter(sender, e);
+                    case Key.D0:
+                        ControlList[9].ucShortcut_OnMouseEnter();
                         break;
                 }
             }
@@ -415,56 +454,56 @@ namespace client
         private void frmMain_KeyUp(object sender, KeyEventArgs e)
         {
             //System.Diagnostics.Debugger.Launch();
-            if (e.Modifiers == Keys.Control && e.KeyCode == Keys.Enter && ThisCategory.allowOpenAll)
+            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Key == Key.Enter && ThisCategory.allowOpenAll)
             {
                 foreach (ucShortcut usc in this.ControlList)
-                    usc.ucShortcut_Click(sender, e);
+                    usc.ucShortcut_OnClick();
             }
 
             try
             {
-                switch (e.KeyCode)
+                switch (e.Key)
                 {
-                    case Keys.D1:
-                        ControlList[0].ucShortcut_MouseLeave(sender, e);
-                        ControlList[0].ucShortcut_Click(sender, e);
+                    case Key.D1:
+                        ControlList[0].ucShortcut_OnMouseLeave();
+                        ControlList[0].ucShortcut_OnClick();
                         break;
-                    case Keys.D2:
-                        ControlList[1].ucShortcut_MouseLeave(sender, e);
-                        ControlList[1].ucShortcut_Click(sender, e);
+                    case Key.D2:
+                        ControlList[1].ucShortcut_OnMouseLeave();
+                        ControlList[1].ucShortcut_OnClick();
 
                         break;
-                    case Keys.D3:
-                        ControlList[2].ucShortcut_MouseLeave(sender, e);
-                        ControlList[2].ucShortcut_Click(sender, e);
+                    case Key.D3:
+                        ControlList[2].ucShortcut_OnMouseLeave();
+                        ControlList[2].ucShortcut_OnClick();
                         break;
-                    case Keys.D4:
-                        ControlList[3].ucShortcut_MouseLeave(sender, e);
-                        ControlList[3].ucShortcut_Click(sender, e);
+                    case Key.D4:
+                        ControlList[3].ucShortcut_OnMouseLeave();
+                        ControlList[3].ucShortcut_OnClick();
                         break;
-                    case Keys.D5:
-                        ControlList[4].ucShortcut_MouseLeave(sender, e);
-                        ControlList[4].ucShortcut_Click(sender, e);
+                    case Key.D5:
+                        ControlList[4].ucShortcut_OnMouseLeave();
+                        ControlList[4].ucShortcut_OnClick();
                         break;
-                    case Keys.D6:
-                        ControlList[5].ucShortcut_MouseLeave(sender, e);
-                        ControlList[5].ucShortcut_Click(sender, e);
+                    case Key.D6:
+                        ControlList[5].ucShortcut_OnMouseLeave();
+                        ControlList[5].ucShortcut_OnClick();
                         break;
-                    case Keys.D7:
-                        ControlList[6].ucShortcut_MouseLeave(sender, e);
-                        ControlList[6].ucShortcut_Click(sender, e);
+                    case Key.D7:
+                        ControlList[6].ucShortcut_OnMouseLeave();
+                        ControlList[6].ucShortcut_OnClick();
                         break;
-                    case Keys.D8:
-                        ControlList[7].ucShortcut_MouseLeave(sender, e);
-                        ControlList[7].ucShortcut_Click(sender, e);
+                    case Key.D8:
+                        ControlList[7].ucShortcut_OnMouseLeave();
+                        ControlList[7].ucShortcut_OnClick();
                         break;
-                    case Keys.D9:
-                        ControlList[8].ucShortcut_MouseLeave(sender, e);
-                        ControlList[8].ucShortcut_Click(sender, e);
+                    case Key.D9:
+                        ControlList[8].ucShortcut_OnMouseLeave();
+                        ControlList[8].ucShortcut_OnClick();
                         break;
-                    case Keys.D0:
-                        ControlList[9].ucShortcut_MouseLeave(sender, e);
-                        ControlList[9].ucShortcut_Click(sender, e);
+                    case Key.D0:
+                        ControlList[9].ucShortcut_OnMouseLeave();
+                        ControlList[9].ucShortcut_OnClick();
                         break;
                 }
             }
@@ -473,12 +512,12 @@ namespace client
 
             }
         }
-
         //
         // endregion
         //
-        public System.Windows.Forms.PictureBox shortcutPic;
-        public System.Windows.Forms.Panel shortcutPanel;
+        public System.Windows.Controls.Image shortcutPic;
+        public Panel shortcutPanel;
+
         //
         // END OF CLASS
         //

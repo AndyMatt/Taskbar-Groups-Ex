@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     static class ShellLink
     {

@@ -2,34 +2,20 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     public static class ImageFunctions
     {
-        public static Bitmap ResizeImage(Image image, int width, int height)
+        public static BitmapSource ResizeImage(BitmapSource image, double width, double height)
         {
-            var destRect = new Rectangle(0, 0, width, height);
-            var destImage = new Bitmap(width, height);
-
-            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-            using (var graphics = Graphics.FromImage(destImage))
-            {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                using (var wrapMode = new ImageAttributes())
-                {
-                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-                }
-            }
-            return destImage;
+            return new TransformedBitmap(image, new ScaleTransform(width / image.Width, height / image.Height));           
         }
 
         public static Icon IconFromImage(Image img)
@@ -66,7 +52,7 @@ namespace client.Classes
             return new Icon(ms);
         }
 
-        public static Color FromString(string name)
+        public static System.Drawing.Color FromString(string name)
         {
             if (String.IsNullOrWhiteSpace(name))
             {
@@ -77,10 +63,78 @@ namespace client.Classes
 
             if (Enum.TryParse(name, out knownColor))
             {
-                return Color.FromKnownColor(knownColor);
+                return System.Drawing.Color.FromKnownColor(knownColor);
             }
 
             return ColorTranslator.FromHtml(name);
+        }
+
+        public static System.Windows.Media.Color ToWindowsColor(System.Drawing.Color color)
+        {
+            return System.Windows.Media.Color.FromArgb(color.A,color.R,color.G,color.B);
+        }
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+
+        public static BitmapSource Bitmap2BitmapSource(Bitmap bitmap)
+        {
+            IntPtr hBitmap = bitmap.GetHbitmap();
+            BitmapSource retval;
+
+            try
+            {
+                retval = Imaging.CreateBitmapSourceFromHBitmap(
+                             hBitmap,
+                             IntPtr.Zero,
+                             Int32Rect.Empty,
+                             BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally
+            {
+                DeleteObject(hBitmap);
+            }
+
+            return retval;
+        }
+
+        public static Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        {
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
+        }
+
+        public static BitmapSource ExtractIconToBitmapSource(string filePath)
+        {
+            return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(filePath).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+        }
+
+        public static BitmapSource IconToBitmapSource(Icon icon)
+        {
+            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+        }
+
+        public static void SaveBitmapSourceToFile(BitmapSource bitmap, string filePath)
+        {
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                encoder.Save(fileStream);
+            }
+        }
+
+        public static BitmapSource BitmapSourceFromFile(string filePath)
+        {
+            var img = new System.Windows.Media.Imaging.BitmapImage(new Uri(filePath));
+            return img;
         }
         //
         // END OF CLASS

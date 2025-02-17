@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="TaskbarGroupsEx.User_Controls.ucShortcut"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TaskbarGroupsEx.User_Controls"
+             mc:Ignorable="d" 
+             Width="55" Height="45" Foreground="Transparent" Background="Transparent">
+    <Grid Background="Transparent" Width="32" Height="32" VerticalAlignment="Center" HorizontalAlignment="Center" MouseDown="ucShortcut_Click" Loaded="ucShortcut_Load" MouseEnter="ucShortcut_MouseEnter" MouseLeave="ucShortcut_MouseLeave">
+        <Image x:Name="picBG" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Hidden" Opacity="0.8" IsHitTestVisible="False" Source="/Resource/AddIconGray.png" Stretch="Fill">
+            <Image.Effect>
+            <BlurEffect Radius="10"/>
+            </Image.Effect>
+        </Image>
+        <Image x:Name="picIcon" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Source="/Resource/AddIconGray.png" Stretch="Fill"/>
+    </Grid>
+</UserControl>

@@ -1,19 +1,20 @@
-﻿using client.User_controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     public class Category
     {
         public string Name;
-        public string ColorString = System.Drawing.ColorTranslator.ToHtml(Color.FromArgb(31, 31, 31));
+        public string ColorString = "Depriciated";
         public bool allowOpenAll = false;
         public List<ProgramShortcut> ShortcutList;
         public int Width; // not used aon
@@ -21,6 +22,9 @@ namespace client.Classes
         Regex specialCharRegex = new Regex("[*'\",_&#^@]");
 
         private static int[] iconSizes = new int[] {16,32,64,128,256,512};
+
+        public System.Windows.Media.Color CatagoryBGColor = System.Windows.Media.Color.FromArgb(255, 31, 31, 31);
+
 
         public Category(string path)
         {
@@ -49,8 +53,16 @@ namespace client.Classes
                 this.ShortcutList = category.ShortcutList;
                 this.Width = category.Width;
                 this.ColorString = category.ColorString;
+                if(this.ColorString != "Depriciated")
+                {
+                    System.Drawing.Color _color = ImageFunctions.FromString(this.ColorString);
+                    Byte _opacity = Convert.ToByte(category.Opacity * 255.0 / 100.0);
+                    category.CatagoryBGColor = System.Windows.Media.Color.FromArgb(_opacity, _color.R, _color.G, _color.B);
+                    this.ColorString = "Depriciated";
+                }
                 this.Opacity = category.Opacity;
                 this.allowOpenAll = category.allowOpenAll;
+                this.CatagoryBGColor = category.CatagoryBGColor;
             }
         }
 
@@ -59,7 +71,7 @@ namespace client.Classes
 
         }
 
-        public void CreateConfig(Image groupImage)
+        public void CreateConfig(BitmapSource groupImage)
         {
 
             string path = @"config\" + this.Name;
@@ -85,21 +97,11 @@ namespace client.Classes
             // Create .ico
             //
 
-            Image img = ImageFunctions.ResizeImage(groupImage, 256, 256); // Resize img if too big
-            img.Save(path + @"\GroupImage.png");
+            
+            BitmapSource img = ImageFunctions.ResizeImage(groupImage, 256.0, 256.0); // Resize img if too big
+            ImageFunctions.SaveBitmapSourceToFile(img , path + @"\GroupImage.png");
 
-            if (GetMimeType(groupImage).ToString() == "*.PNG")
-            {
-                createMultiIcon(groupImage, path + @"\GroupIcon.ico");
-            }
-            else { 
-                using (FileStream fs = new FileStream(path + @"\GroupIcon.ico", FileMode.Create))
-                {
-                    ImageFunctions.IconFromImage(img).Save(fs);
-                    fs.Close();
-                }
-            }
-
+            createMultiIcon(groupImage, path + @"\GroupIcon.ico");
 
             // Through shellLink.cs class, pass through into the function information on how to construct the icon
             // Needed due to needing to set a unique AppUserModelID so the shortcut applications don't stack on the taskbar with the main application
@@ -122,7 +124,7 @@ namespace client.Classes
                 Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.Name, @"(_)+", " ") + ".lnk")); // Move .lnk to correct directory
         }
 
-        private static void createMultiIcon(Image iconImage, string filePath)
+        private static void createMultiIcon(BitmapSource iconImage, string filePath)
         {
 
 
@@ -136,11 +138,11 @@ namespace client.Classes
                           orderby diffItem.difference
                           select diffItem).First().number;
 
-            List<Bitmap> iconList = new List<Bitmap>();
+            List<BitmapSource> iconList = new List<BitmapSource>();
 
-            while (nearestSize != 16)
+            while (nearestSize != 8)
             {
-                iconList.Add(ImageFunctions.ResizeImage(iconImage, nearestSize, nearestSize));
+                iconList.Add(ImageFunctions.ResizeImage(iconImage, nearestSize, nearestSize) as BitmapSource);
                 nearestSize = (int)Math.Round((decimal) nearestSize / 2);
             }
 
@@ -150,12 +152,20 @@ namespace client.Classes
             }
         }
 
-        public Bitmap LoadIconImage() // Needed to access img without occupying read/write
+        public BitmapImage LoadIconImage() // Needed to access img without occupying read/write
         {
             string path = @"config\" + Name + @"\GroupImage.png";
 
             using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(path)))
-                return new Bitmap(ms);
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = ms;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                return bitmap;
+            }
         }
 
         // Goal is to create a folder with icons of the programs pre-cached and ready to be read
@@ -186,7 +196,17 @@ namespace client.Classes
             {
                 String filePath = ShortcutList[i].FilePath;
 
-                ucProgramShortcut programShortcutControl = Application.OpenForms["frmGroup"].Controls["pnlShortcuts"].Controls[i] as ucProgramShortcut;
+                //ucProgramShortcut programShortcutControl = Application.Current.Windows.["frmGroup"].Controls["pnlShortcuts"].Controls[i] as ucProgramShortcut;
+                ucProgramShortcut? programShortcutControl = null;
+                foreach (Window win in Application.Current.Windows)
+                {
+                    if(win.GetType() == typeof(frmGroup))
+                    {
+                        frmGroup frm = (frmGroup)win;
+                        programShortcutControl = frm.pnlShortcuts.Children[i] as ucProgramShortcut;  
+                    }
+                }
+
                 string savePath;
 
                 if (ShortcutList[i].isWindowsApp)
@@ -200,14 +220,17 @@ namespace client.Classes
                     savePath = iconPath + "\\" + Path.GetFileNameWithoutExtension(filePath) + ".png";
                 }
 
-                programShortcutControl.logo.Save(savePath);
+                if (programShortcutControl != null)
+                {
+                    ImageFunctions.SaveBitmapSourceToFile(programShortcutControl.logo, savePath);
+                }
 
     }
         }
 
         // Try to load an iamge from the cache
         // Takes in a programPath (shortcut) and processes it to the proper file name
-        public Image loadImageCache(ProgramShortcut shortcutObject)
+        public BitmapImage loadImageCache(ProgramShortcut shortcutObject)
         {
 
             String programPath = shortcutObject.FilePath;
@@ -219,13 +242,20 @@ namespace client.Classes
                     // Try to construct the path like if it existed
                     // If it does, directly load it into memory and return it
                     // If not then it would throw an exception in which the below code would catch it
-                    String cacheImagePath = @Path.GetDirectoryName(Application.ExecutablePath) + 
+                    String cacheImagePath = @Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + 
                         @"\config\" + this.Name + @"\Icons\" + ((shortcutObject.isWindowsApp) ? specialCharRegex.Replace(programPath, string.Empty) : 
                         @Path.GetFileNameWithoutExtension(programPath)) + (Directory.Exists(programPath)? "_FolderObjTSKGRoup.jpg" : ".png");
 
                     using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(cacheImagePath)))
-                        return Image.FromStream(ms);
-                    
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.StreamSource = ms;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        bitmap.Freeze();
+                        return bitmap;
+                    }                    
                 }
                 catch (Exception)
                 {
@@ -236,33 +266,38 @@ namespace client.Classes
                     // Same processing as above in cacheIcons()
                     String path = MainPath.path + @"\config\" + this.Name + @"\Icons\" + Path.GetFileNameWithoutExtension(programPath) + (Directory.Exists(programPath) ? "_FolderObjTSKGRoup.png" : ".png");
 
-                    Image finalImage;
+                    BitmapSource finalImage;
 
                     if (Path.GetExtension(programPath).ToLower() == ".lnk")
                     {
-                        finalImage = Forms.frmGroup.handleLnkExt(programPath);
+                        finalImage = frmGroup.handleLnkExt(programPath);
                     }
                     else if (Directory.Exists(programPath))
                     {
-                        finalImage = handleFolder.GetFolderIcon(programPath).ToBitmap();
+                        finalImage = ImageFunctions.IconToBitmapSource(handleFolder.GetFolderIcon(programPath));
                     } else 
                     {
-                        finalImage = Icon.ExtractAssociatedIcon(programPath).ToBitmap();
+                        finalImage = ImageFunctions.IconToBitmapSource(Icon.ExtractAssociatedIcon(programPath));
                     }
 
 
                     // Above all sets finalIamge to the bitmap that was generated from the icons
                     // Save the icon after it has been fetched by previous code
-                    finalImage.Save(path);
+                    ImageFunctions.SaveBitmapSourceToFile(finalImage, path);
 
                     // Return the said image
-                    return finalImage;
+                    return new BitmapImage(new Uri(path, UriKind.RelativeOrAbsolute));
                 }
             }
             else
             {
-                return global::client.Properties.Resources.Error;
+                return (BitmapImage)Application.Current.Resources["ErrorIcon"];
             }
+        }
+
+        public static string GetPixelFormat(BitmapSource i)
+        {
+            return i.Format.ToString();           
         }
 
         public static string GetMimeType(Image i)

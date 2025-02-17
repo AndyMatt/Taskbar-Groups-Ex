@@ -1,24 +1,39 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
-using client.Classes;
-using client.Forms;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using TaskbarGroupsEx;
+using TaskbarGroupsEx.Classes;
 
-namespace client.User_controls
+namespace TaskbarGroupsEx
 {
-    public partial class ucCategoryPanel : UserControl
+    /// <summary>
+    /// Interaction logic for ucCatagoryPanel.xaml
+    /// </summary>
+    public partial class ucCatagoryPanel : UserControl
     {
         public Category Category;
         public frmClient Client;
-        public ucCategoryPanel(frmClient client, Category category)
+        public ucCatagoryPanel(frmClient client, Category category)
         {
             InitializeComponent();
             Client = client;
             Category = category;
             lblTitle.Text = Regex.Replace(category.Name, @"(_)+", " ");
-            picGroupIcon.BackgroundImage = Category.LoadIconImage();
+            picGroupIcon.Source = Category.LoadIconImage();
 
             // starting values for position of shortcuts
             int x = 90;
@@ -32,6 +47,7 @@ namespace client.User_controls
 
             foreach (ProgramShortcut psc in Category.ShortcutList) // since this is calculating uc height it cant be placed in load
             {
+                /*
                 if (columns == 8)
                 {
                     x = 90; // resetting x
@@ -39,46 +55,51 @@ namespace client.User_controls
                     this.Height += 40;
                     columns = 1;
                 }
+                */
                 CreateShortcut(x, y, psc);
-                x += 50;
+                //x += 50;
                 columns++;
             }
+        }
+
+        //TODO THIS IS A QUICKFIX. REMOVE IT AND IMPLEMENT A BETTER METHOD
+        public BitmapImage ConvertToBitmapImage(Bitmap src)
+        {
+            MemoryStream ms = new MemoryStream();
+            ((System.Drawing.Bitmap)src).Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+            BitmapImage image = new BitmapImage();
+            image.BeginInit();
+            ms.Seek(0, SeekOrigin.Begin);
+            image.StreamSource = ms;
+            image.EndInit();
+            return image;
         }
 
         private void CreateShortcut(int x, int y, ProgramShortcut programShortcut)
         {
             // creating shortcut picturebox from shortcut
-            this.shortcutPanel = new System.Windows.Forms.PictureBox
+            this.shortcutPanel = new System.Windows.Controls.Image
             {
-                BackColor = System.Drawing.Color.Transparent,
-                Location = new System.Drawing.Point(x, y),
-                Size = new System.Drawing.Size(30, 30),
-                BackgroundImageLayout = ImageLayout.Stretch,
-                TabStop = false
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(10, 2, 10, 2),
+                Width = Height = 32,
             };
-            this.shortcutPanel.MouseEnter += new System.EventHandler((sender, e) => Client.EnterControl(sender, e, this));
-            this.shortcutPanel.MouseLeave += new System.EventHandler((sender, e) => Client.LeaveControl(sender, e, this));
-            this.shortcutPanel.Click += new System.EventHandler((sender, e) => OpenFolder(sender, e));
+            this.shortcutPanel.MouseEnter += new MouseEventHandler((sender, e) => Client.EnterControl(sender, e, this));
+            this.shortcutPanel.MouseLeave += new MouseEventHandler((sender, e) => Client.LeaveControl(sender, e, this));
+            this.shortcutPanel.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) => OpenFolder(sender, e));
 
             // Check if file is stil existing and if so render it
             if (File.Exists(programShortcut.FilePath) || Directory.Exists(programShortcut.FilePath) || programShortcut.isWindowsApp)
             {
-                this.shortcutPanel.BackgroundImage = Category.loadImageCache(programShortcut);
+                this.shortcutPanel.Source = Category.loadImageCache(programShortcut);
             }
             else // if file does not exist
             {
-                this.shortcutPanel.BackgroundImage = global::client.Properties.Resources.Error;
-                ToolTip tt = new ToolTip
-                {
-                    InitialDelay = 0,
-                    ShowAlways = true
-                };
-                tt.SetToolTip(this.shortcutPanel, "Program does not exist");
+                this.shortcutPanel.Source = (BitmapImage)Application.Current.Resources["ErrorIcon"];
+                this.shortcutPanel.ToolTip = "Program does not exist";
             }
 
-            this.Controls.Add(this.shortcutPanel);
-            this.shortcutPanel.Show();
-            this.shortcutPanel.BringToFront();
+            this.pnlShortcutIcons.Children.Add(this.shortcutPanel);
         }
 
         private void ucNewCategory_Load(object sender, EventArgs e)
@@ -87,22 +108,22 @@ namespace client.User_controls
 
         }
 
-        public void OpenFolder(object sender, EventArgs e)
+
+        public void OpenFolder(object sender, MouseEventArgs e)
         {
             // Open the shortcut folder for the group when click on category panel
 
             // Build path based on the directory of the main .exe file
-            string filePath = Path.GetFullPath(new Uri($"{MainPath.path}\\Shortcuts").LocalPath + "\\" + Category.Name + ".lnk");
+            string filePath = System.IO.Path.GetFullPath(new Uri($"{MainPath.path}\\Shortcuts").LocalPath + "\\" + Category.Name + ".lnk");
 
             // Open directory in explorer and highlighting file
             System.Diagnostics.Process.Start("explorer.exe", string.Format("/select,\"{0}\"", @filePath));
         }
 
-        private void cmdDelete_Click(object sender, EventArgs e)
+        private void cmdEdit_Click(object sender, RoutedEventArgs e)
         {
             frmGroup editGroup = new frmGroup(Client, Category);
-            editGroup.Show();
-            editGroup.BringToFront();
+            editGroup.ShowDialog();
         }
 
         public static Bitmap LoadBitmap(string path) // needed to access img without occupying read/write
@@ -117,21 +138,10 @@ namespace client.User_controls
             }
         }
 
-        private void lblTitle_MouseEnter(object sender, EventArgs e)
-        {
-            Client.EnterControl(sender, e, this);
-
-        }
-
-        private void lblTitle_MouseLeave(object sender, EventArgs e)
-        {
-            Client.LeaveControl(sender, e, this);
-        }
-
         //
         // endregion
         //
-        public System.Windows.Forms.PictureBox shortcutPanel;
+        public System.Windows.Controls.Image shortcutPanel;
 
     }
 }

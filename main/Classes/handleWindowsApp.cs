@@ -4,16 +4,21 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Collections.Generic;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows;
+using System.Windows.Media.Imaging;
 using Windows.Management.Deployment;
+using System.Windows.Documents;
 
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     class handleWindowsApp
     {
         public static Dictionary<string, string> fileDirectoryCache = new Dictionary<string, string>();
 
         private static PackageManager pkgManger = new PackageManager();
-        public static Bitmap getWindowsAppIcon(String file, bool alreadyAppID = false)
+        public static BitmapSource getWindowsAppIcon(String file, bool alreadyAppID = false)
         {
             // Get the app's ID from its shortcut target file (Ex. 4DF9E0F8.Netflix_mcm4njqhnhss8!Netflix.app)
             String microsoftAppName = (!alreadyAppID) ? GetLnkTarget(file) : file;
@@ -43,49 +48,48 @@ namespace client.Classes
 
                 // Search for all files with 150x150 in its name and use the first result
                 DirectoryInfo logoDirectory = new DirectoryInfo(logoLocationFullPath);
-                FileInfo[] filesInDir = getLogoFolder("StoreLogo", logoDirectory);
+                List<string> filesInDir = getLogoFolder("StoreLogo", logoDirectory);
 
-                if (filesInDir.Length != 0)
+                if (filesInDir.Count != 0)
                 {
-                    return getLogo(filesInDir.Last().FullName, file);
+                    return getLogo(filesInDir.First(), file);
                 }
                 else
                 {
 
                     filesInDir = getLogoFolder("scale-200", logoDirectory);
 
-                    if (filesInDir.Length != 0)
+                    if (filesInDir.Count != 0)
                     {
-                        return getLogo(filesInDir[0].FullName, file);
+                        return getLogo(filesInDir.First(), file);
                     } else
                     {
-                        return Icon.ExtractAssociatedIcon(file).ToBitmap();
+                        return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(file).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
                     }
                         
                 }
             } else
             {
-                return Icon.ExtractAssociatedIcon(file).ToBitmap();
+                return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(file).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             }
         }
 
-        private static FileInfo[] getLogoFolder(String keyname, DirectoryInfo logoDirectory)
+        private static List<string> getLogoFolder(String keyname, DirectoryInfo logoDirectory)
         {
             // Search for all files with the keyname in its name and use the first result
-            FileInfo[] filesInDir = logoDirectory.GetFiles("*" + keyname + "*.*");
+            List<string> filesInDir = Directory.EnumerateFiles(logoDirectory.FullName, "*" + keyname + "*.*", SearchOption.AllDirectories).Where(s => !s.Contains("contrast")).ToList();
             return filesInDir;
         }
 
-        private static Bitmap getLogo(String logoPath, String defaultFile)
+        private static BitmapSource getLogo(String logoPath, String defaultFile)
         {
             if (File.Exists(logoPath))
             {
-                using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(logoPath)))
-                    return ImageFunctions.ResizeImage(Bitmap.FromStream(ms), 64, 64);
+                return ImageFunctions.BitmapSourceFromFile(logoPath);
             }
             else
             {
-                return Icon.ExtractAssociatedIcon(defaultFile).ToBitmap();
+                return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(defaultFile).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             }
         }
 

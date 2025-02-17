@@ -1,18 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using client.Classes;
-using System.Diagnostics;
-using System.IO;
-using IWshRuntimeLibrary;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.Forms;
 
-namespace client.User_controls
+namespace TaskbarGroupsEx.User_Controls
 {
     public partial class ucShortcut : UserControl
     {
@@ -24,41 +29,45 @@ namespace client.User_controls
             InitializeComponent();
         }
 
-        private void ucShortcut_Load(object sender, EventArgs e)
+        private void ucShortcut_Load(object sender, RoutedEventArgs e)
         {
-            this.Show();
-            this.BringToFront();
-            this.BackColor = MotherForm.BackColor;
-            picIcon.BackgroundImage = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
+            picIcon.Source = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
+            picBG.Source = ThisCategory.loadImageCache(Psc);
         }
 
-        public void ucShortcut_Click(object sender, EventArgs e)
+        private void ucShortcut_Click(object sender, MouseButtonEventArgs e)
+        {
+            ucShortcut_OnClick();
+        }
+
+        public void ucShortcut_OnClick()
         {
             if (Psc.isWindowsApp)
             {
-                Process p = new Process() {StartInfo = new ProcessStartInfo() { UseShellExecute = true, FileName = $@"shell:appsFolder\{Psc.FilePath}" }};
+                Process p = new Process() { StartInfo = new ProcessStartInfo() { UseShellExecute = true, FileName = $@"shell:appsFolder\{Psc.FilePath}" } };
                 p.Start();
-            } else
+            }
+            else
             {
-                if(Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.exeString)
-
+                if (System.IO.Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.exeString)
                 {
                     MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, MainPath.path);
-                } else
+                }
+                else
                 {
                     MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, Psc.WorkingDirectory);
                 }
             }
         }
 
-        public void ucShortcut_MouseEnter(object sender, EventArgs e)
+        private void ucShortcut_MouseEnter(object sender, MouseEventArgs e)
         {
-            this.BackColor = MotherForm.HoverColor;
+            picBG.Visibility = Visibility.Visible;
         }
 
-        public void ucShortcut_MouseLeave(object sender, EventArgs e)
+        private void ucShortcut_MouseLeave(object sender, MouseEventArgs e)
         {
-            this.BackColor = Color.Transparent;
+            picBG.Visibility = Visibility.Hidden;
         }
     }
 }

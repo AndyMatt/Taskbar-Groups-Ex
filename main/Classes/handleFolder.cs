@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
-namespace client.Classes
+namespace TaskbarGroupsEx.Classes
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
     public struct SHFILEINFO

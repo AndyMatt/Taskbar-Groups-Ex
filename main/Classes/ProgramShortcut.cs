@@ -1,4 +1,4 @@
-﻿namespace client.Classes
+﻿namespace TaskbarGroupsEx.Classes
 {
     public class ProgramShortcut
     {

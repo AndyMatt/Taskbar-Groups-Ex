@@ -1,0 +1,58 @@
+﻿<Window x:Class="TaskbarGroupsEx.frmClient"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskbarGroupsEx"
+        mc:Ignorable="d"
+        Title="frmClient" Height="860" Width="1016" MinWidth="825" MinHeight="600">
+    <DockPanel LastChildFill="true" Background="#FF030303">
+        <DockPanel LastChildFill="False" DockPanel.Dock="Left" Width="320" Background="#FF1F1F1F">
+            <TextBlock x:Name="lblHelpTitle" DockPanel.Dock="Top" TextWrapping="Wrap" Height="59" HorizontalAlignment="Center" Margin="20,47,11,0" FontSize="20" Width="198" FontWeight="Light" VerticalAlignment="Top" Foreground="White"> Press on &quot;Add Taskbar group&quot; to get started</TextBlock>
+            <StackPanel x:Name="pnlHelp" Margin="13,30,12,0"  DockPanel.Dock="Top" Height="202" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <TextBlock Text="When the folder opens:" TextWrapping="Wrap" x:Name="textBlock1" Margin="0,20,0,10" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="1. Right click on the shortcut named as your new group" TextWrapping="Wrap" Padding="25,10,25,10" x:Name="textBlock2" FontSize="13" Foreground="White"/>
+                <TextBlock Text="2. Click on 'Pin to taskbar'" TextWrapping="Wrap" Padding="20,10,8,10" x:Name="textBlock3" FontSize="13" Foreground="White"/>
+                <TextBlock Text="3. Enjoy your new Taskbar group" TextWrapping="Wrap" x:Name="textBlock4" Margin="20,10,20,10" FontSize="13" Foreground="White"/>
+            </StackPanel>
+            <StackPanel Margin="13,30,12,35"  DockPanel.Dock="Bottom" Height="202">
+                <TextBlock Text="Have issues/bugs?" TextWrapping="Wrap" x:Name="textBlock5" Margin="0,20,0,10" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Padding="25,10,25,10" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="Please report them to the" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
+                    <Hyperlink FontSize="13" NavigateUri="https://github.com/tjackenpacken/taskbar-groups" RequestNavigate="Hyperlink_RequestNavigate">Github</Hyperlink>
+                    <TextBlock Text="repo" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
+                </TextBlock>
+                <TextBlock x:Name="currentVersion" Text="Current Version: {CurrentVersion}" TextWrapping="Wrap" Margin="0,30,0,0" HorizontalAlignment="Center" FontSize="13" Foreground="White" Padding="0,0,0,5"/>
+
+                <TextBlock TextWrapping="Wrap" Padding="20,0,20,0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Latest Version:" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
+                    <Hyperlink x:Name="githubVersion" FontSize="13" NavigateUri="https://github.com/tjackenpacken/taskbar-groups/releases" RequestNavigate="Hyperlink_RequestNavigate">{LatestVersion}</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+
+        </DockPanel>
+        <GroupBox x:Name="groupBoxHeader" Header="" DockPanel.Dock="Top" Height="100" BorderThickness="0,0,0,0" Width="660" Margin="0,0,0,30">
+            <StackPanel>
+                <Label x:Name="label" Content="Taskbar Groups" FontSize="26" Foreground="White"/>
+                <Label x:Name="label1" Content="Group your favourite programs and pin them to the taskbar for easy access" FontSize="13.25" Foreground="White"/>
+            </StackPanel>
+        </GroupBox>
+        <Grid Margin="10,0,10,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,10,10,120" Height="Auto" VerticalAlignment="Top">
+                <StackPanel x:Name="pnlExistingGroups"/>
+        </ScrollViewer>
+        <Grid VerticalAlignment="Bottom" Margin="5,20,5,20">
+                <Grid x:Name="pnlAddGroup" DockPanel.Dock="Top" Height="70" Width="340" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave" HorizontalAlignment="Center" VerticalAlignment="Top" MouseLeftButtonUp="cmdAddGroup_Click">
+                    <Grid HorizontalAlignment="Center" Width="173" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition Height="5*"/>
+                        </Grid.RowDefinitions>
+                        <Image x:Name="cmdAddGroup" Width="40" Height="40 " Grid.RowSpan="2" Margin="5,8,123,15" Source="/Resource/AddIconGray.png" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave"/>
+                        <Label x:Name="lblAddGroup" Content="Add Taskbar Folder" Margin="55,15,5,22" Grid.RowSpan="2" Foreground="White" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
