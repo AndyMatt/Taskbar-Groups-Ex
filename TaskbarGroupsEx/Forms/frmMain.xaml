@@ -9,7 +9,7 @@
     <Grid>
         <Border x:Name="bdrMain"  CornerRadius="5" BorderBrush="#FF313131" Background="Transparent" BorderThickness="1">
             <WrapPanel x:Name="pnlShortcutIcons" DockPanel.Dock="Left" HorizontalAlignment="Left" VerticalAlignment="Top">
-            <!--Image Width="30" Height="30" HorizontalAlignment="Left" Margin="2,2,2,2" Source="/Resource/AddIconGray.png"></Image-->
+            <!--Image Width="30" Height="30" HorizontalAlignment="Left" Margin="2,2,2,2" Source="/Resources/AddIconGray.png"></Image-->
         </WrapPanel>
     </Border>
     </Grid>

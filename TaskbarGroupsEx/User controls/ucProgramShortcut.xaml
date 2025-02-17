@@ -48,7 +48,7 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <Image Name="picShortcut" Width="30"  Height="30" VerticalAlignment="Top" MouseDown="ucProgramShortcut_Click" HorizontalAlignment="Left" Margin="69,9,0,0" IsHitTestVisible="False" Source="/Resource/AddIconWhite.png"/>
+        <Image Name="picShortcut" Width="30"  Height="30" VerticalAlignment="Top" MouseDown="ucProgramShortcut_Click" HorizontalAlignment="Left" Margin="69,9,0,0" IsHitTestVisible="False" Source="/Resources/AddIconWhite.png"/>
         <Button Name="cmdDelete" Width="83" Height="27" VerticalAlignment="Top" HorizontalAlignment="Left" Content="Delete" Margin="345,11,0,0" Background="#FF4C4C4C" BorderBrush="#FF4C4C4C" Foreground="White" Click="cmdDelete_Click"/>
         <TextBox Style="{DynamicResource TextBoxStyle}" x:Name="txtShortcutName" Foreground="#FFFFFCFF" Width="214" Height="22" MouseDown="ucProgramShortcut_Click" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="112,13,0,0" Background="#FF1F1F1F" Text="Program Name" BorderThickness="1,1,1,1" VerticalContentAlignment="Stretch" TextChanged="txtShortcutName_TextChanged" KeyDown="ucProgramShortcut_KeyDown" GotFocus="txtShortcutName_GotFocus" LostFocus="txtShortcutName_LostFocus" SelectionBrush="#FF313131" BorderBrush="#FF313131" Padding="0,-1,0,0"/>
         <Label x:Name="cmdNumUp" Content="▲" HorizontalAlignment="Left" Margin="19,7,0,0" VerticalAlignment="Top" Width="10" Height="14" Foreground="White" MouseDown="cmdNumUp_Click" MouseEnter="cmdNum_MouseEnter" MouseLeave="cmdNum_MouseLeave" Padding="0,0,0,0" RenderTransformOrigin="0.5,0.5">

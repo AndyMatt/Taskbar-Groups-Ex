@@ -48,7 +48,7 @@
                             <RowDefinition Height="4*"/>
                             <RowDefinition Height="5*"/>
                         </Grid.RowDefinitions>
-                        <Image x:Name="cmdAddGroup" Width="40" Height="40 " Grid.RowSpan="2" Margin="5,8,123,15" Source="/Resource/AddIconGray.png" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave"/>
+                        <Image x:Name="cmdAddGroup" Width="40" Height="40 " Grid.RowSpan="2" Margin="5,8,123,15" Source="/Resources/AddIconGray.png" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave"/>
                         <Label x:Name="lblAddGroup" Content="Add Taskbar Folder" Margin="55,15,5,22" Grid.RowSpan="2" Foreground="White" MouseEnter="pnlAddGroup_MouseEnter" MouseLeave="pnlAddGroup_MouseLeave"/>
                     </Grid>
                 </Grid>

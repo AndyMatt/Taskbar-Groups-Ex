@@ -17,7 +17,7 @@
         <Button x:Name="cmdWidthDown" Content="▼" HorizontalAlignment="Left" Margin="515,41,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" Click="cmdWidthDown_Click"/>
         <Rectangle HorizontalAlignment="Left" Height="1" Margin="45,63,0,0" VerticalAlignment="Top" Width="500" Fill="#FF8F8F8F"/>
         <Grid x:Name="pnlGroupIcon" Width="495" HorizontalAlignment="Left" VerticalAlignment="Top" Height="86" Margin="49,83,0,0" Background="#FF1F1F1F" MouseDown="cmdAddGroupIcon_Click" AllowDrop="True" Drop="pnlDragDropImg" DragEnter="pnlDragDropEnterImg" DragLeave="pnlDragDropLeaveImg" MouseEnter="pnlGroupIcon_MouseEnter" MouseLeave="pnlGroupIcon_MouseLeave">
-            <Image x:Name="cmdAddGroupIcon" HorizontalAlignment="Left" Height="60" Margin="23,12,0,0" VerticalAlignment="Top" Width="60" Source="/Resource/AddIconWhite.png" MouseDown="cmdAddGroupIcon_Click" MouseEnter="pnlGroupIcon_MouseEnter" MouseLeave="pnlGroupIcon_MouseLeave"/>
+            <Image x:Name="cmdAddGroupIcon" HorizontalAlignment="Left" Height="60" Margin="23,12,0,0" VerticalAlignment="Top" Width="60" Source="/Resources/AddIconWhite.png" MouseDown="cmdAddGroupIcon_Click" MouseEnter="pnlGroupIcon_MouseEnter" MouseLeave="pnlGroupIcon_MouseLeave"/>
             <TextBlock x:Name="lblAddGroupIcon" HorizontalAlignment="Left" Margin="96,15,0,0" VerticalAlignment="Top" Width="190" Height="30" Foreground="White" RenderTransformOrigin="0,0" Background="#00000000" TextAlignment="Left" FontSize="20">Change group icon</TextBlock>
             <TextBlock x:Name="lblAddGroupIconDesc" HorizontalAlignment="Left" Margin="99,46,0,0" VerticalAlignment="Top" Width="245" Height="17" Foreground="White" RenderTransformOrigin="0,0" Background="#00000000" TextAlignment="Left" FontSize="11">Select the icon that shows in the taskbar</TextBlock>
         </Grid>
@@ -30,7 +30,7 @@
                 </StackPanel>
             </ScrollViewer>
             <Grid x:Name="pnlAddShortcut" Width="415" DockPanel.Dock="Bottom" VerticalAlignment="Top" Height="80" Margin="0,0,0,0" MouseLeftButtonUp="pnlAddShortcut_Click" MouseEnter="pnlAddShortcut_MouseEnter" MouseLeave="pnlAddShortcut_MouseLeave" AllowDrop="True" Drop="pnlDragDropExt" DragEnter="pnlDragDropEnterExt" DragLeave="pnlDragDropLeaveExt">
-                <Image x:Name="image" HorizontalAlignment="Center" Height="35" VerticalAlignment="Top" Width="35" Margin="0,16,0,0" Source="/Resource/AddIconGray.png"/>
+                <Image x:Name="image" HorizontalAlignment="Center" Height="35" VerticalAlignment="Top" Width="35" Margin="0,16,0,0" Source="/Resources/AddIconGray.png"/>
                 <TextBlock x:Name="lblErrorShortcut" Margin="0,54,0,0" VerticalAlignment="Top" Width="414" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden">Error message</TextBlock>
                 <TextBlock x:Name="lblAddShortcut" Margin="0,54,0,0" VerticalAlignment="Top" Width="414" Height="19" Foreground="White" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">Add new shortcut</TextBlock>
             </Grid>

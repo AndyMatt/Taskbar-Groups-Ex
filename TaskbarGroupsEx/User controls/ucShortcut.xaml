@@ -7,11 +7,11 @@
              mc:Ignorable="d" 
              Width="55" Height="45" Foreground="Transparent" Background="Transparent">
     <Grid Background="Transparent" Width="32" Height="32" VerticalAlignment="Center" HorizontalAlignment="Center" MouseDown="ucShortcut_Click" Loaded="ucShortcut_Load" MouseEnter="ucShortcut_MouseEnter" MouseLeave="ucShortcut_MouseLeave">
-        <Image x:Name="picBG" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Hidden" Opacity="0.8" IsHitTestVisible="False" Source="/Resource/AddIconGray.png" Stretch="Fill">
+        <Image x:Name="picBG" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Hidden" Opacity="0.8" IsHitTestVisible="False" Source="/Resources/AddIconGray.png" Stretch="Fill">
             <Image.Effect>
             <BlurEffect Radius="10"/>
             </Image.Effect>
         </Image>
-        <Image x:Name="picIcon" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Source="/Resource/AddIconGray.png" Stretch="Fill"/>
+        <Image x:Name="picIcon" Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Source="/Resources/AddIconGray.png" Stretch="Fill"/>
     </Grid>
 </UserControl>
