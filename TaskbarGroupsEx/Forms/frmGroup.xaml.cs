@@ -26,8 +26,6 @@ using ColorPicker;
 using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Shell;
 using System.Transactions;
-using ChinhDo.Transactions;
-using ChinhDo.Transactions.FileManager;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Xml.Linq;
 
@@ -527,11 +525,10 @@ namespace TaskbarGroupsEx
 
                         try
                         {
-                            IFileManager fm = new TxFileManager();
                             using (TransactionScope scope1 = new TransactionScope())
                             {
-                                fm.DeleteDirectory(configPath);
-                                fm.Delete(shortcutPath);
+                                Directory.Delete(configPath, true);
+                                System.IO.File.Delete(shortcutPath);
                                 scope1.Complete();
                                 scope1.Dispose();
                             }
@@ -581,11 +578,10 @@ namespace TaskbarGroupsEx
 
                 try
                 {
-                    IFileManager fm = new TxFileManager();
                     using (TransactionScope scope1 = new TransactionScope())
                     {
-                        fm.DeleteDirectory(configPath);
-                        fm.Delete(shortcutPath);
+                        Directory.Delete(configPath, true);
+                        System.IO.File.Delete(shortcutPath);
                         this.Hide();
                         Client.Reload(); //flush and reload category panels
                         scope1.Complete();
