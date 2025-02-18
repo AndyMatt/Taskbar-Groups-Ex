@@ -21,24 +21,19 @@ using TaskbarGroupsEx.Classes;
 namespace TaskbarGroupsEx
 {
     /// <summary>
-    /// Interaction logic for ucCatagoryPanel.xaml
+    /// Interaction logic for ucCategoryPanel.xaml
     /// </summary>
-    public partial class ucCatagoryPanel : UserControl
+    public partial class ucCategoryPanel : UserControl
     {
         public Category Category;
         public frmClient Client;
-        public ucCatagoryPanel(frmClient client, Category category)
+        public ucCategoryPanel(frmClient client, Category category)
         {
             InitializeComponent();
             Client = client;
             Category = category;
             lblTitle.Text = Regex.Replace(category.Name, @"(_)+", " ");
             picGroupIcon.Source = Category.LoadIconImage();
-
-            // starting values for position of shortcuts
-            int x = 90;
-            int y = 55;
-            int columns = 1;
 
             if (!Directory.Exists((@"config\" + category.Name) + "\\Icons\\"))
             {
@@ -47,35 +42,11 @@ namespace TaskbarGroupsEx
 
             foreach (ProgramShortcut psc in Category.ShortcutList) // since this is calculating uc height it cant be placed in load
             {
-                /*
-                if (columns == 8)
-                {
-                    x = 90; // resetting x
-                    y += 40; // adding new row
-                    this.Height += 40;
-                    columns = 1;
-                }
-                */
-                CreateShortcut(x, y, psc);
-                //x += 50;
-                columns++;
+                CreateShortcut(psc);
             }
         }
 
-        //TODO THIS IS A QUICKFIX. REMOVE IT AND IMPLEMENT A BETTER METHOD
-        public BitmapImage ConvertToBitmapImage(Bitmap src)
-        {
-            MemoryStream ms = new MemoryStream();
-            ((System.Drawing.Bitmap)src).Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
-            BitmapImage image = new BitmapImage();
-            image.BeginInit();
-            ms.Seek(0, SeekOrigin.Begin);
-            image.StreamSource = ms;
-            image.EndInit();
-            return image;
-        }
-
-        private void CreateShortcut(int x, int y, ProgramShortcut programShortcut)
+        private void CreateShortcut(ProgramShortcut programShortcut)
         {
             // creating shortcut picturebox from shortcut
             this.shortcutPanel = new System.Windows.Controls.Image
@@ -101,13 +72,6 @@ namespace TaskbarGroupsEx
 
             this.pnlShortcutIcons.Children.Add(this.shortcutPanel);
         }
-
-        private void ucNewCategory_Load(object sender, EventArgs e)
-        {
-            cmdDelete.Top = (this.Height / 2) - (cmdDelete.Height / 2);
-
-        }
-
 
         public void OpenFolder(object sender, MouseEventArgs e)
         {
@@ -138,9 +102,6 @@ namespace TaskbarGroupsEx
             }
         }
 
-        //
-        // endregion
-        //
         public System.Windows.Controls.Image shortcutPanel;
 
     }

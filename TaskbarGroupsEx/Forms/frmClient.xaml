@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskbarGroupsEx"
         mc:Ignorable="d"
-        Title="frmClient" Height="860" Width="1016" MinWidth="825" MinHeight="600">
+        Title="TaskbarGroupsEx" Height="860" Width="1016" MinWidth="825" MinHeight="600" Icon="/Resources/Icon.ico">
     <DockPanel LastChildFill="true" Background="#FF030303">
         <DockPanel LastChildFill="False" DockPanel.Dock="Left" Width="320" Background="#FF1F1F1F">
             <TextBlock x:Name="lblHelpTitle" DockPanel.Dock="Top" TextWrapping="Wrap" Height="59" HorizontalAlignment="Center" Margin="20,47,11,0" FontSize="20" Width="198" FontWeight="Light" VerticalAlignment="Top" Foreground="White"> Press on &quot;Add Taskbar group&quot; to get started</TextBlock>

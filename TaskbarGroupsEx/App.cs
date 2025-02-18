@@ -2,6 +2,7 @@
 using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -49,6 +50,8 @@ namespace TaskbarGroupsEx
         [STAThread]
         public void EntryPoint(object sender, StartupEventArgs e)
         {
+            ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
+
             // Use existing methods to obtain cursor already imported as to not import any extra functions
             // Pass as two variables instead of Point due to Point requiring System.Drawing
             Point MousePos = GetMousePosition();
@@ -64,8 +67,7 @@ namespace TaskbarGroupsEx
             Directory.CreateDirectory($"{MainPath.path}\\config");
             Directory.CreateDirectory($"{MainPath.path}\\Shortcuts");
 
-            System.Runtime.ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
-
+            /*
             try
             {
                 System.IO.File.Create(MainPath.path + "\\directoryTestingDocument.txt").Close();
@@ -85,7 +87,7 @@ namespace TaskbarGroupsEx
                         Process.GetCurrentProcess().Kill();
                     }
                 }
-            }
+            }*/
 
             if (arguments.Length > 1) // Checks for additional arguments; opens either main application or taskbar drawer application
             {

@@ -78,7 +78,7 @@ namespace TaskbarGroupsEx
         public void LoadCategory(string dir)
         {
             Classes.Category category = new Classes.Category(dir);
-            ucCatagoryPanel newCategory = new ucCatagoryPanel(this, category);
+            ucCategoryPanel newCategory = new ucCategoryPanel(this, category);
             pnlExistingGroups.Children.Add(newCategory);
             newCategory.MouseEnter += new MouseEventHandler((sender, e) => EnterControl(sender, e, newCategory));
             newCategory.MouseLeave += new MouseEventHandler((sender, e) => LeaveControl(sender, e, newCategory));

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskbarGroupsEx.Forms"
         mc:Ignorable="d"
-        Title="frmMain" SizeToContent="WidthAndHeight" AllowsTransparency="True" Background="Transparent" Loaded="frmMain_Load" Deactivated="frmMain_Deactivate" KeyDown="frmMain_KeyDown" KeyUp="frmMain_KeyUp" SizeChanged="Window_SizeChanged" WindowStyle="None">
+        Title="Group" SizeToContent="WidthAndHeight" AllowsTransparency="True" Background="Transparent" Loaded="frmMain_Load" Deactivated="frmMain_Deactivate" KeyDown="frmMain_KeyDown" KeyUp="frmMain_KeyUp" WindowStyle="None" Activated="Window_Activated">
     <Grid>
         <Border x:Name="bdrMain"  CornerRadius="5" BorderBrush="#FF313131" Background="Transparent" BorderThickness="1">
             <WrapPanel x:Name="pnlShortcutIcons" DockPanel.Dock="Left" HorizontalAlignment="Left" VerticalAlignment="Top">

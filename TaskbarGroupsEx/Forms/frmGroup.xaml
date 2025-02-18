@@ -6,7 +6,7 @@
         xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
         xmlns:local="clr-namespace:TaskbarGroupsEx"
         mc:Ignorable="d"
-        Title="frmGroup" Height="838" Width="605" Background="#FF1F1F1F" MouseDown="frmGroup_MouseClick">
+        Title="New group" Height="838" Width="605" Background="#FF1F1F1F" MouseDown="frmGroup_MouseClick">
     <Grid x:Name="frmGroupGrid">
         <TextBlock x:Name="lblErrorTitle" HorizontalAlignment="Left" Margin="44,9,0,0" VerticalAlignment="Top" Width="96" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" Visibility="Hidden">Error message</TextBlock>
         <TextBlock x:Name="lblErrorNum" HorizontalAlignment="Left" Margin="268,9,0,0" VerticalAlignment="Top" Width="241" Height="19" Foreground="Red" RenderTransformOrigin="0,0" FontSize="14" TextAlignment="Right" Visibility="Hidden">Error message</TextBlock>
