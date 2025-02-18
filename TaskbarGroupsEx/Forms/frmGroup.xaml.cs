@@ -1,33 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Interop;
-//using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Windows.Interop;
-using IWshRuntimeLibrary;
 using System.IO;
-using System.Diagnostics.Eventing.Reader;
-using TaskbarGroupsEx;
 using TaskbarGroupsEx.Classes;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
 using ColorPicker;
 using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Shell;
 using System.Transactions;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System.Xml.Linq;
+using IWshRuntimeLibrary;
 
 namespace TaskbarGroupsEx
 {
@@ -179,24 +162,16 @@ namespace TaskbarGroupsEx
         }
         private void pnlDragDropExt(object sender, DragEventArgs e)
         {
-            var files = (String[])e.Data.GetData(DataFormats.FileDrop);
+            String[]? files = (String[])e.Data.GetData(DataFormats.FileDrop);
 
-            if (files == null)
+            if (files != null)
             {
-                ShellObjectCollection ShellObj = ShellObjectCollection.FromDataObject((System.Runtime.InteropServices.ComTypes.IDataObject)e.Data);
-
-                foreach (ShellNonFileSystemItem item in ShellObj)
-                {
-                    addShortcut(item.ParsingName, true);
-                }
-            } else
-            {
-                // Loops through each file to make sure they exist and to add them directly to the shortcut list
                 foreach (var file in files)
                 {
-                    if (extensionExt.Contains(System.IO.Path.GetExtension(file)) && System.IO.File.Exists(file) || Directory.Exists(file))
+                    if (System.IO.File.Exists(file) || Directory.Exists(file))
                     {
-                        addShortcut(file);
+                        bool isExtension = !extensionExt.Contains(System.IO.Path.GetExtension(file));
+                        addShortcut(file, isExtension);
                     }
                 }
             }
@@ -814,16 +789,14 @@ namespace TaskbarGroupsEx
 
         private void cmdSelectDirectory_Click(object sender, RoutedEventArgs e)
         {
-            CommonOpenFileDialog openFileDialog = new CommonOpenFileDialog()
+            OpenFolderDialog openFileDialog = new OpenFolderDialog
             {
-                EnsurePathExists = true,
-                IsFolderPicker = true,
                 InitialDirectory = Category.ShortcutList[selectedShortcut.Index].WorkingDirectory
             };
 
-            if (openFileDialog.ShowDialog(this) == CommonFileDialogResult.Ok)
+            if (openFileDialog.ShowDialog(this) == true)
             {
-                pnlWorkingDirectory.Text = Category.ShortcutList[selectedShortcut.Index].WorkingDirectory = openFileDialog.FileName;
+                pnlWorkingDirectory.Text = Category.ShortcutList[selectedShortcut.Index].WorkingDirectory = openFileDialog.FolderName;
             }
         }
 

@@ -39,11 +39,14 @@
   <ItemGroup>
     <PackageReference Include="Interop.IWshRuntimeLibrary" Version="1.0.1" />
     <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.1" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
     <PackageReference Include="System.Management" Version="9.0.1" />
-    <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.2" />
-    <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
     <PackageReference Include="WpfScreenHelper" Version="2.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Drawing.Common">
+      <HintPath>..\..\..\..\..\..\..\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\shared\Microsoft.WindowsDesktop.App\8.0.12\System.Drawing.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
