@@ -9,6 +9,8 @@
     <Platforms>AnyCPU;x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,12 +18,6 @@
     <EmbeddedResource Remove="Resource\**" />
     <None Remove="Resource\**" />
     <Page Remove="Resource\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="AddIconGray.png" />
-    <None Remove="AddIconWhite.png" />
-    <None Remove="User Controls\AddIconGray.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +45,13 @@
     <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.2" />
     <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
     <PackageReference Include="WpfScreenHelper" Version="2.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\AddIconGray.png" />
+    <Resource Include="Resources\AddIconWhite.png" />
+    <Resource Include="Resources\Error.png" />
+    <Resource Include="Resources\Icon.ico" />
   </ItemGroup>
 
   <ItemGroup>

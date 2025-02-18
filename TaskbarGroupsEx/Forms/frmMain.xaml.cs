@@ -19,6 +19,7 @@ using System.Windows.Shapes;
 using System.Xml.Linq;
 using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.User_Controls;
+using Windows.Storage.Search;
 using WpfScreenHelper;
 using WpfScreenHelper.Enum;
 
@@ -69,29 +70,16 @@ namespace TaskbarGroupsEx.Forms
             this.WindowStyle = WindowStyle.None;
 
             this.Icon = ImageFunctions.ExtractIconToBitmapSource(MainPath.path + "\\config\\" + passedDirec + "\\GroupIcon.ico");
-            //using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes()))
-             //   this.Icon = new Icon(ms);
 
             if (Directory.Exists(@MainPath.path + @"\config\" + passedDirec))
             {
                 ControlList = new List<ucShortcut>();
 
-                //this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
                 ThisCategory = new Category($"config\\{passedDirec}");
                 bdrMain.Background = new SolidColorBrush(ThisCategory.CatagoryBGColor);
                 System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, 37, 37, 37);
                 bdrMain.BorderBrush = new SolidColorBrush(BorderColor);
-                //Opacity = (1 - (ThisCategory.Opacity / 100));
-
-                //Should be reproducable with a multiple function
-                /*
-                if (ThisCategory.CatagoryBGColor.R * 0.2126 + ThisCategory.CatagoryBGColor.G * 0.7152 + ThisCategory.CatagoryBGColor.B * 0.0722 > 255 / 2)
-                    //if backcolor is light, set hover color as darker
-                    HoverColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, (ThisCategory.CatagoryBGColor.R - 50), (ThisCategory.CatagoryBGColor.G - 50), (ThisCategory.CatagoryBGColor.B - 50));
-                else
-                    //light backcolor is light, set hover color as darker
-                    HoverColor = Color.FromArgb(BackColor.A, (BackColor.R + 50), (BackColor.G + 50), (BackColor.B + 50));
-                */
+                
                 HoverColor = System.Windows.Media.Color.Multiply(ThisCategory.CatagoryBGColor, 3.0f);
             }
             else
@@ -278,11 +266,6 @@ namespace TaskbarGroupsEx.Forms
                 }
             }
 
-            if (dockedRects.Count == 0)
-            {
-                // Taskbar is set to "Auto-Hide".
-            }
-
             return dockedRects;
         }
         //
@@ -292,15 +275,6 @@ namespace TaskbarGroupsEx.Forms
         // Loading category and building shortcuts
         private void LoadCategory()
         {
-            //System.Diagnostics.Debugger.Launch();
-
-            //this.Width = 0;
-            //this.Height = 45;
-            int x = 0;
-            int y = 0;
-            int width = ThisCategory.Width;
-            int columns = 1;
-
             // Check if icon caches exist for the category being loaded
             // If not then rebuild the icon cache
             if (!Directory.Exists(@MainPath.path + @"\config\" + ThisCategory.Name + @"\Icons\"))
@@ -314,22 +288,6 @@ namespace TaskbarGroupsEx.Forms
 
             foreach (ProgramShortcut psc in ThisCategory.ShortcutList)
             {
-
-                /*
-                if (columns > width)  // creating new row if there are more psc than max width
-                {
-                    x = 0;
-                    y += 45;
-                    this.Height += 45;
-                    columns = 1;
-                }
-
-                if (this.Width < ((width * 55)))
-                    this.Width += (55);
-                */
-                // OLD
-                //BuildShortcutPanel(x, y, psc);
-
                 // Building shortcut controls
                 ucShortcut pscPanel = new ucShortcut()
                 {
@@ -337,41 +295,11 @@ namespace TaskbarGroupsEx.Forms
                     MotherForm = this,
                     ThisCategory = ThisCategory,
                 };
-                //pscPanel.Location = new System.Drawing.Point(x, y);
-                //pscPanel.Margin = new Thickness(x, y,0,0);
+
                 pnlShortcutIcons.Children.Add(pscPanel);
                 this.ControlList.Add(pscPanel);
-                //pscPanel.Show();
-                //pscPanel.BringToFront();
-
-                // Reset values
-                x += 55;
-                //columns++;
             }
-
-            //this.Width -= 2; // For some reason the width is 2 pixels larger than the shortcuts. Temporary fix
         }
-
-        /*
-        // OLD (Having some issues with the uc build, so keeping the old code below)
-        private void BuildShortcutPanel(int x, int y, ProgramShortcut psc)
-        {
-            this.shortcutPic = new System.Windows.Forms.PictureBox();
-            this.shortcutPic.BackColor = System.Drawing.Color.Transparent;
-            this.shortcutPic.Location = new System.Drawing.Point(25, 15);
-            this.shortcutPic.Size = new System.Drawing.Size(25, 25);
-            this.shortcutPic.BackgroundImage = ThisCategory.loadImageCache(psc); // Use the local icon cache for the file specified as the icon image
-            this.shortcutPic.BackgroundImageLayout = ImageLayout.Stretch;
-            this.shortcutPic.TabStop = false;
-            this.shortcutPic.Click += new System.EventHandler((sender, e) => OpenFile(psc.Arguments, psc.FilePath, psc.WorkingDirectory));
-            this.shortcutPic.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.shortcutPanel.Controls.Add(this.shortcutPic);
-            this.shortcutPic.Show();
-            this.shortcutPic.BringToFront();
-            this.shortcutPic.MouseEnter += new System.EventHandler((sender, e) => this.shortcutPanel.BackColor = Color.Black);
-            this.shortcutPic.MouseLeave += new System.EventHandler((sender, e) => this.shortcutPanel.BackColor = System.Drawing.Color.Transparent);
-        }
-        */
 
         // Click handler for shortcuts
         public void OpenFile(string arguments, string path, string workingDirec)
@@ -382,11 +310,6 @@ namespace TaskbarGroupsEx.Forms
             proc.FileName = path;
             proc.WorkingDirectory = workingDirec;
             proc.UseShellExecute = true;
-
-            /*
-            proc.EnableRaisingEvents = false;
-            proc.StartInfo.FileName = path;
-            */
 
             try
             {
@@ -402,7 +325,9 @@ namespace TaskbarGroupsEx.Forms
         private void frmMain_Deactivate(object sender, EventArgs e)
         {
             // closes program if user clicks outside form
-            this.Close();
+            //this.Close();
+            this.WindowState = WindowState.Minimized;
+            this.Hide();
         }
 
         // Keyboard shortcut handlers
@@ -410,45 +335,13 @@ namespace TaskbarGroupsEx.Forms
         {
             try
             {
-                switch (e.Key)
+                if (e.Key >= Key.D1 && e.Key <= Key.D0)
                 {
-
-                    case Key.D1:
-                        ControlList[0].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D2:
-                        ControlList[1].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D3:
-                        ControlList[2].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D4:
-                        ControlList[3].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D5:
-                        ControlList[4].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D6:
-                        ControlList[5].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D7:
-                        ControlList[6].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D8:
-                        ControlList[7].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D9:
-                        ControlList[8].ucShortcut_OnMouseEnter();
-                        break;
-                    case Key.D0:
-                        ControlList[9].ucShortcut_OnMouseEnter();
-                        break;
+                    int idx = e.Key - Key.D1;
+                    ControlList[idx].ucShortcut_OnMouseEnter();
                 }
             }
-            catch
-            {
-
-            }
+            catch{}
         }
 
         private void frmMain_KeyUp(object sender, KeyEventArgs e)
@@ -460,63 +353,29 @@ namespace TaskbarGroupsEx.Forms
                     usc.ucShortcut_OnClick();
             }
 
+
             try
             {
-                switch (e.Key)
+                if (e.Key >= Key.D1 && e.Key <= Key.D0)
                 {
-                    case Key.D1:
-                        ControlList[0].ucShortcut_OnMouseLeave();
-                        ControlList[0].ucShortcut_OnClick();
-                        break;
-                    case Key.D2:
-                        ControlList[1].ucShortcut_OnMouseLeave();
-                        ControlList[1].ucShortcut_OnClick();
-
-                        break;
-                    case Key.D3:
-                        ControlList[2].ucShortcut_OnMouseLeave();
-                        ControlList[2].ucShortcut_OnClick();
-                        break;
-                    case Key.D4:
-                        ControlList[3].ucShortcut_OnMouseLeave();
-                        ControlList[3].ucShortcut_OnClick();
-                        break;
-                    case Key.D5:
-                        ControlList[4].ucShortcut_OnMouseLeave();
-                        ControlList[4].ucShortcut_OnClick();
-                        break;
-                    case Key.D6:
-                        ControlList[5].ucShortcut_OnMouseLeave();
-                        ControlList[5].ucShortcut_OnClick();
-                        break;
-                    case Key.D7:
-                        ControlList[6].ucShortcut_OnMouseLeave();
-                        ControlList[6].ucShortcut_OnClick();
-                        break;
-                    case Key.D8:
-                        ControlList[7].ucShortcut_OnMouseLeave();
-                        ControlList[7].ucShortcut_OnClick();
-                        break;
-                    case Key.D9:
-                        ControlList[8].ucShortcut_OnMouseLeave();
-                        ControlList[8].ucShortcut_OnClick();
-                        break;
-                    case Key.D0:
-                        ControlList[9].ucShortcut_OnMouseLeave();
-                        ControlList[9].ucShortcut_OnClick();
-                        break;
+                    int idx = e.Key - Key.D1;
+                    ControlList[idx].ucShortcut_OnMouseLeave();
+                    ControlList[idx].ucShortcut_OnClick();
                 }
-            }
-            catch
-            {
-
-            }
+            }              
+            catch{}
         }
         //
         // endregion
         //
         public System.Windows.Controls.Image shortcutPic;
         public Panel shortcutPanel;
+
+        private void Window_Activated(object sender, EventArgs e)
+        {
+            //this.Show();
+            //this.WindowState = WindowState.Normal;
+        }
 
         //
         // END OF CLASS

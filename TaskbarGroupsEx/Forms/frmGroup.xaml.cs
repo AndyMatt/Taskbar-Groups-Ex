@@ -46,7 +46,7 @@ namespace TaskbarGroupsEx
         private String[] specialImageExt = new String[] { ".ico", ".exe", ".lnk" };
         private String[] newExt;
 
-        public ucProgramShortcut selectedShortcut;
+        public ucProgramShortcut? selectedShortcut = null;
 
         public static Shell32.Shell shell = new Shell32.Shell();
 
@@ -175,8 +175,7 @@ namespace TaskbarGroupsEx
 
             if (pnlShortcuts.Children.Count != 0)
             {
-                //TODO MOVE TO NEW Entry
-                //pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[0]);
+                pnlScrollViewer.ScrollToBottom();
             }
             RefreshProgramControls();
         }
@@ -206,8 +205,7 @@ namespace TaskbarGroupsEx
 
             if (pnlShortcuts.Children.Count != 0)
             {
-                //TODO MOVE TO NEW Entry
-                //pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[0]);
+                pnlScrollViewer.ScrollToBottom();
             }
 
             resetSelection();
@@ -338,7 +336,6 @@ namespace TaskbarGroupsEx
         }
 
         // Handle drag and dropped images
-        //TODO FUNCTION IS NON FUNCTIONAL FROM ORIGINAL
         private void pnlDragDropImg(object sender, DragEventArgs e)
         {
             resetSelection();
@@ -365,7 +362,7 @@ namespace TaskbarGroupsEx
                 }
                 else
                 {
-                    cmdAddGroupIcon.Source = Classes.ImageFunctions.IconToBitmapSource(System.Drawing.Icon.ExtractAssociatedIcon(file));
+                    cmdAddGroupIcon.Source = Classes.ImageFunctions.IconPathToBitmapSource(file);
                 }
             }
             else
@@ -375,11 +372,6 @@ namespace TaskbarGroupsEx
             lblAddGroupIcon.Text = "Change group icon";
         }
 
-
-        //TODO REMOVE
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern IntPtr ExtractAssociatedIconW(IntPtr hInst, string lpIconPath, ref int lpiIcon);
-
         public static BitmapSource handleLnkExt(String file)
         {
             IWshShortcut lnkIcon = (IWshShortcut)new WshShell().CreateShortcut(file);
@@ -388,12 +380,7 @@ namespace TaskbarGroupsEx
             // Checks for link iconLocations as those are used by some applications
             if (icLocation[0] != "" && !lnkIcon.IconLocation.Contains("http"))
             {
-                int index = 0;
-                IntPtr hIcon = ExtractAssociatedIconW(IntPtr.Zero, System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(icLocation[0])), ref index);
-                if (hIcon != IntPtr.Zero)
-                {
-                    return Imaging.CreateBitmapSourceFromHIcon(hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                }
+                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(icLocation[0])));
             }
             else if (icLocation[0] == "" && lnkIcon.TargetPath == "")
             {
@@ -401,19 +388,8 @@ namespace TaskbarGroupsEx
             }
             else
             {
-                int index = 0;
-                IntPtr hIcon = ExtractAssociatedIconW(IntPtr.Zero, System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(lnkIcon.TargetPath)), ref index);
-                if (hIcon != IntPtr.Zero)
-                {
-                    return Imaging.CreateBitmapSourceFromHIcon(hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                }
+                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(lnkIcon.TargetPath)));
             }
-
-            //Fail Case
-            Bitmap error = new Bitmap(32, 32);
-            Graphics flagGraphics = Graphics.FromImage(error);
-            flagGraphics.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 32, 32);
-            return ImageFunctions.Bitmap2BitmapSource(error);
         }
 
         public static String handleExtName(String file)

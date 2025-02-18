@@ -21,9 +21,9 @@ namespace TaskbarGroupsEx.User_Controls
 {
     public partial class ucShortcut : UserControl
     {
-        public ProgramShortcut Psc { get; set; }
-        public frmMain MotherForm { get; set; }
-        public Category ThisCategory { get; set; }
+        public ProgramShortcut? Psc = null;
+        public frmMain? MotherForm = null;
+        public Category? ThisCategory = null;
         public ucShortcut()
         {
             InitializeComponent();
@@ -31,8 +31,11 @@ namespace TaskbarGroupsEx.User_Controls
 
         private void ucShortcut_Load(object sender, RoutedEventArgs e)
         {
-            picIcon.Source = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
-            picBG.Source = ThisCategory.loadImageCache(Psc);
+            if (ThisCategory != null && Psc != null)
+            {
+                picIcon.Source = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
+                picBG.Source = ThisCategory.loadImageCache(Psc);
+            }
         }
 
         private void ucShortcut_Click(object sender, MouseButtonEventArgs e)
@@ -42,30 +45,43 @@ namespace TaskbarGroupsEx.User_Controls
 
         public void ucShortcut_OnClick()
         {
-            if (Psc.isWindowsApp)
+            if (Psc != null && Psc.isWindowsApp)
             {
                 Process p = new Process() { StartInfo = new ProcessStartInfo() { UseShellExecute = true, FileName = $@"shell:appsFolder\{Psc.FilePath}" } };
                 p.Start();
             }
             else
             {
-                if (System.IO.Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.exeString)
+                if(MotherForm != null)
                 {
-                    MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, MainPath.path);
-                }
-                else
-                {
-                    MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, Psc.WorkingDirectory);
+                    if (System.IO.Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.exeString)
+                    {
+                        MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, MainPath.path);
+                    }
+                    else
+                    {
+                        MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, Psc.WorkingDirectory);
+                    }
                 }
             }
         }
 
         private void ucShortcut_MouseEnter(object sender, MouseEventArgs e)
         {
+            ucShortcut_OnMouseEnter();
+        }
+
+        public void ucShortcut_OnMouseEnter()
+        {
             picBG.Visibility = Visibility.Visible;
         }
 
         private void ucShortcut_MouseLeave(object sender, MouseEventArgs e)
+        {
+            ucShortcut_OnMouseLeave();
+        }
+
+        public void ucShortcut_OnMouseLeave()
         {
             picBG.Visibility = Visibility.Hidden;
         }

@@ -13,6 +13,20 @@ namespace TaskbarGroupsEx.Classes
 {
     public static class ImageFunctions
     {
+        static BitmapSource? errorImage = null;
+        public static BitmapSource GetErrorImage()
+        {
+            if(errorImage == null)
+            {
+                Bitmap errorBitmap = new Bitmap(32, 32);
+                Graphics flagGraphics = Graphics.FromImage(errorBitmap);
+                flagGraphics.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 32, 32);
+                errorImage = Bitmap2BitmapSource(errorBitmap);
+            }
+
+            return errorImage;
+        }
+
         public static BitmapSource ResizeImage(BitmapSource image, double width, double height)
         {
             return new TransformedBitmap(image, new ScaleTransform(width / image.Width, height / image.Height));           
@@ -114,6 +128,17 @@ namespace TaskbarGroupsEx.Classes
         public static BitmapSource ExtractIconToBitmapSource(string filePath)
         {
             return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(filePath).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+        }
+
+        public static BitmapSource IconPathToBitmapSource(string filePath)
+        {
+            Icon? _icon = Icon.ExtractAssociatedIcon(filePath);
+            if( _icon != null )
+            {
+                return Imaging.CreateBitmapSourceFromHIcon(_icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+
+            return GetErrorImage();
         }
 
         public static BitmapSource IconToBitmapSource(Icon icon)
