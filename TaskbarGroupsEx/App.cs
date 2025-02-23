@@ -53,11 +53,12 @@ namespace TaskbarGroupsEx
         [STAThread]
         public void EntryPoint(object sender, StartupEventArgs e)
         {
+            /*
             while (!Debugger.IsAttached)
             {
                 Thread.Sleep(1000);
                 //NativeMethods.MessageBox("Waiting for Debugger");
-            }
+            }*/
 
             ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
             //this.Activated += AfterLoading;
@@ -103,12 +104,7 @@ namespace TaskbarGroupsEx
             {
                 SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.menu." + arguments[1]);
 
-                if (!cachedGroups.ContainsKey(arguments[1]))
-                {
-                    cachedGroups[arguments[1]] = new frmMain(arguments[1], MousePos);
-                }
-
-                cachedGroups[arguments[1]].Show();
+                new frmMain(arguments[1], MousePos).Show();
                 // Sets the AppUserModelID to tjackenpacken.taskbarGroup.menu.groupName
                 // Distinguishes each shortcut process from one another to prevent them from stacking with the main application
 
@@ -120,58 +116,6 @@ namespace TaskbarGroupsEx
                 new frmClient().Show();
             }
         }
-
-        private void AfterLoading(object? sender, EventArgs e)
-        {
-            while(!MainWindow.IsInitialized)
-            {
-                Thread.Sleep(100);
-            }
-            IntPtr handle = new WindowInteropHelper(MainWindow).Handle;
-            HwndSource source = HwndSource.FromHwnd(handle);
-            source.AddHook(new HwndSourceHook(WndProc));
-        }
-
-        public struct COPYDATASTRUCT
-        {
-            public int cbData;
-            public IntPtr dwData;
-            [MarshalAs(UnmanagedType.LPStr)] public string lpData;
-        }
-        private static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == 0x004A)
-            {
-                COPYDATASTRUCT cds = Marshal.PtrToStructure<COPYDATASTRUCT>(lParam);
-                //byte[] managedArray = new byte[wParam];
-                //Marshal.Copy(lParam, managedArray,0, (int)wParam);
-                string arg = cds.lpData;
-
-                if (!string.IsNullOrEmpty(arg))
-                {
-                    SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.menu." + arg);
-                    if (!cachedGroups.ContainsKey(arg))
-                    {
-                        cachedGroups[arg] = new frmMain(arg, new Point(0, 0));
-                    }
-
-                    cachedGroups[arg].Show();
-
-                }
-                handled = true;
-            }
-            else if (msg == MSG_OPENSETTINGS)
-            {
-                //OpenClient();
-                handled = true;
-            }
-            return IntPtr.Zero;
-        }
-
-        private const int MSG_OPENTASKBARGROUP = 0xFF01;
-        private const int MSG_OPENSETTINGS = 0xFF02;
-
-
     }
 
 }
