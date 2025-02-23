@@ -21,7 +21,10 @@ using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.User_Controls;
 using Windows.Storage.Search;
 using WpfScreenHelper;
-using WpfScreenHelper.Enum;
+using System.Runtime.InteropServices;
+using System.Windows.Automation;
+using Interop.UIAutomationClient;
+
 
 namespace TaskbarGroupsEx.Forms
 {
@@ -30,6 +33,12 @@ namespace TaskbarGroupsEx.Forms
     /// </summary>
     public partial class frmMain : Window
     {
+        [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+
         /*
         // Allow doubleBuffering drawing each frame to memory and then onto screen
         // Solves flickering issues mostly as the entire rendering of the screen is done in 1 operation after being first loaded to memory
@@ -91,9 +100,47 @@ namespace TaskbarGroupsEx.Forms
         private void frmMain_Load(object sender, RoutedEventArgs e)
         {
             LoadCategory();
-            SetLocation();
+            newSetLocation();
+            //SetLocation();
         }
 
+        private void newSetLocation()
+        {
+            IntPtr hWndTray = FindWindow("Shell_TrayWnd", null);
+
+            IntPtr hWndRebar = FindWindowEx(hWndTray, IntPtr.Zero, "ReBarWindow32", null);
+            IntPtr hWndMSTaskSwWClass = FindWindowEx(hWndRebar, IntPtr.Zero, "MSTaskSwWClass", null);
+            IntPtr hWndMSTaskListWClass = FindWindowEx(hWndMSTaskSwWClass, IntPtr.Zero, "MSTaskListWClass", null);
+
+            IUIAutomation pUIAutomation = new CUIAutomation();
+
+            // Taskbar
+            IUIAutomationElement windowElement = pUIAutomation.ElementFromHandle(hWndMSTaskListWClass);
+            if (windowElement != null)
+            {
+                IUIAutomationElementArray elementArray = null;
+                IUIAutomationCondition condition = pUIAutomation.CreateTrueCondition();
+                elementArray = windowElement.FindAll(Interop.UIAutomationClient.TreeScope.TreeScope_Descendants | Interop.UIAutomationClient.TreeScope.TreeScope_Children, condition);
+                if (elementArray != null)
+                {
+                    Console.WriteLine("Taskbar");
+                    int nNbItems = elementArray.Length;
+                    for (int nItem = 0; nItem <= nNbItems - 1; nItem++)
+                    {
+                        IUIAutomationElement element = elementArray.GetElement(nItem);
+                        string sName = element.CurrentName;
+                        string sAutomationId = element.CurrentAutomationId;
+                        tagRECT rect = element.CurrentBoundingRectangle;
+                        if (sAutomationId.Contains("tjackenpacken.taskbarGroup.menu."+ passedDirec))
+                        {
+                            this.Left = rect.left + ((rect.right - rect.left) / 2) - (pnlShortcutIcons.Width/2);
+                            this.Top = rect.top - (pnlShortcutIcons.Height);
+                        }
+                            //Console.WriteLine("\tName : {0} - AutomationId : {1}  - Rect({2}, {3}, {4}, {5})", sName, sAutomationId, rect.left, rect.top, rect.right, rect.bottom);
+                    }
+                }
+            }
+        }
         // Sets location of form
         private void SetLocation()
         {
@@ -326,8 +373,7 @@ namespace TaskbarGroupsEx.Forms
         {
             // closes program if user clicks outside form
             //this.Close();
-            this.WindowState = WindowState.Minimized;
-            this.Hide();
+            this.Visibility = Visibility.Hidden;
         }
 
         // Keyboard shortcut handlers
@@ -373,6 +419,8 @@ namespace TaskbarGroupsEx.Forms
 
         private void Window_Activated(object sender, EventArgs e)
         {
+            this.Visibility = Visibility.Visible;
+            NativeMethods.GlobalActivate(this);
             //this.Show();
             //this.WindowState = WindowState.Normal;
         }
