@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -93,15 +93,12 @@ namespace TaskbarGroupsEx.Classes
                 writer.Serialize(file, this);
                 file.Close();
             }
-            //
-            // Create .ico
-            //
 
-            
+            // Create .ico
             BitmapSource img = ImageFunctions.ResizeImage(groupImage, 256.0, 256.0); // Resize img if too big
             ImageFunctions.SaveBitmapSourceToFile(img , path + @"\GroupImage.png");
 
-            createMultiIcon(groupImage, path + @"\GroupIcon.ico");
+            createMultiIcon(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0, true), path + @"\GroupIcon.ico");
 
             // Through shellLink.cs class, pass through into the function information on how to construct the icon
             // Needed due to needing to set a unique AppUserModelID so the shortcut applications don't stack on the taskbar with the main application

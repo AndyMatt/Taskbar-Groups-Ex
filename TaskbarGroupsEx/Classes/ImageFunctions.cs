@@ -3,11 +3,12 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-
+using System.Windows.Media.Media3D;
 
 namespace TaskbarGroupsEx.Classes
 {
@@ -27,9 +28,23 @@ namespace TaskbarGroupsEx.Classes
             return errorImage;
         }
 
-        public static BitmapSource ResizeImage(BitmapSource image, double width, double height)
+        public static BitmapSource ResizeImage(BitmapSource image, double width, double height, bool Padding = false)
         {
-            return new TransformedBitmap(image, new ScaleTransform(width / image.Width, height / image.Height));           
+                double MinScale = Math.Min(width / image.Width, height / image.Height);
+                BitmapSource resizedBmp = new TransformedBitmap(image, new ScaleTransform(MinScale, MinScale, 10, 10));
+
+            if (!Padding)
+                return resizedBmp;
+
+            DrawingVisual drawingVisual = new DrawingVisual();
+            DrawingContext drawingContext = drawingVisual.RenderOpen();
+            drawingContext.DrawImage(resizedBmp, new Rect(((width- resizedBmp.Width)/2.0), ((height- resizedBmp.Height)/2.0), resizedBmp.Width, resizedBmp.Height));
+            drawingContext.Close();
+
+            RenderTargetBitmap bmp = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32);
+            bmp.Render(drawingVisual);
+
+            return bmp;
         }
 
         public static Icon IconFromImage(Image img)
@@ -127,7 +142,15 @@ namespace TaskbarGroupsEx.Classes
 
         public static BitmapSource ExtractIconToBitmapSource(string filePath)
         {
-            return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(filePath).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            if (filePath != null)
+            {
+                Icon? ico = Icon.ExtractAssociatedIcon(filePath);
+                if (ico != null)
+                {
+                    return Imaging.CreateBitmapSourceFromHIcon(ico.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+            return GetErrorImage();
         }
 
         public static BitmapSource IconPathToBitmapSource(string filePath)
