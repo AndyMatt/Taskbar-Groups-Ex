@@ -23,7 +23,7 @@ namespace TaskbarGroupsEx.User_Controls
     {
         public ProgramShortcut? Psc = null;
         public frmMain? MotherForm = null;
-        public Category? ThisCategory = null;
+        public FolderGroupConfig? ThisCategory = null;
         public ucShortcut()
         {
             InitializeComponent();

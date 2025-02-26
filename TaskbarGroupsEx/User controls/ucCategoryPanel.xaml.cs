@@ -25,9 +25,9 @@ namespace TaskbarGroupsEx
     /// </summary>
     public partial class ucCategoryPanel : UserControl
     {
-        public Category Category;
+        public FolderGroupConfig Category;
         public frmClient Client;
-        public ucCategoryPanel(frmClient client, Category category)
+        public ucCategoryPanel(frmClient client, FolderGroupConfig category)
         {
             InitializeComponent();
             Client = client;

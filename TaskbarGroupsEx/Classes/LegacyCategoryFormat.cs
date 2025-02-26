@@ -18,10 +18,10 @@ namespace TaskbarGroupsEx.Classes
 
         public LegacyCategoryFormat() { } // needed for XML serialization
 
-        public static Classes.Category ConvertToNewFormat(string legacyConfigFile)
+        public static Classes.FolderGroupConfig ConvertToNewFormat(string legacyConfigFile)
         {
             bool bSuccess = false;
-            Classes.Category newFormatCategory = new Classes.Category();
+            Classes.FolderGroupConfig newFormatCategory = new Classes.FolderGroupConfig();
 
             System.Xml.Serialization.XmlSerializer? reader =
                 new System.Xml.Serialization.XmlSerializer(typeof(LegacyCategoryFormat.Category));

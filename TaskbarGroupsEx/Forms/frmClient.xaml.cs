@@ -59,7 +59,7 @@ namespace TaskbarGroupsEx
 
         public void LoadCategory(string dir)
         {
-            Classes.Category category = Category.ParseConfiguration(dir);
+            Classes.FolderGroupConfig category = FolderGroupConfig.ParseConfiguration(dir);
             ucCategoryPanel newCategory = new ucCategoryPanel(this, category);
             pnlExistingGroups.Children.Add(newCategory);
             newCategory.MouseEnter += new MouseEventHandler((sender, e) => EnterControl(sender, e, newCategory));

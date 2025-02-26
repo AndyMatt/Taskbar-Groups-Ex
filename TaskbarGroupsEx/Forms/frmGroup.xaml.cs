@@ -15,7 +15,7 @@ namespace TaskbarGroupsEx
 {
     public partial class frmGroup : Window
     {
-        public Category? Category;
+        public FolderGroupConfig? Category;
         public frmClient Client;
         public bool IsNew;
         private String[] imageExt = new String[] { ".png", ".jpg", ".jpe", ".jfif", ".jpeg", };
@@ -34,7 +34,7 @@ namespace TaskbarGroupsEx
         //--------------------------------------
 
         // CTOR for creating a new group
-        public frmGroup(frmClient client, Category? category = null)
+        public frmGroup(frmClient client, FolderGroupConfig? category = null)
         {
             System.Runtime.ProfileOptimization.StartProfile("frmGroup.Profile");
 
@@ -46,7 +46,7 @@ namespace TaskbarGroupsEx
             if (category == null)
             {
                 newExt = imageExt.Concat(specialImageExt).ToArray();
-                Category = new Category { ShortcutList = new List<ProgramShortcut>() };
+                Category = new FolderGroupConfig { ShortcutList = new List<ProgramShortcut>() };
                 clmnDelete.Width = new GridLength(0.0);
                 radioDark.IsChecked = true;
             }

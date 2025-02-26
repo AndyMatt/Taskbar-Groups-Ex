@@ -13,7 +13,7 @@ using System.Xml.Linq;
 
 namespace TaskbarGroupsEx.Classes
 {
-    public class Category
+    public class FolderGroupConfig
     {
         public string? Name;
         public List<ProgramShortcut> ShortcutList = new List<ProgramShortcut>();
@@ -24,7 +24,7 @@ namespace TaskbarGroupsEx.Classes
         public string ConfigurationPath = "";
         Regex specialCharRegex = new Regex("[*'\",_&#^@]");
 
-        public static Category ParseConfiguration(string path)
+        public static FolderGroupConfig ParseConfiguration(string path)
         {
             string legacyConfigFilePath = Path.GetFullPath(path) + @"\ObjectData.xml";
             if (System.IO.File.Exists(legacyConfigFilePath))
@@ -32,12 +32,12 @@ namespace TaskbarGroupsEx.Classes
                 return LegacyCategoryFormat.ConvertToNewFormat(legacyConfigFilePath);
             }
 
-            return new Category(path);
+            return new FolderGroupConfig(path);
         }
 
-        public Category(){}
+        public FolderGroupConfig(){}
 
-        public Category(string path)
+        public FolderGroupConfig(string path)
         {
             ConfigurationPath = Path.GetFullPath(path) + @"\FolderGroupConfig.ini";
 

@@ -55,7 +55,7 @@ namespace TaskbarGroupsEx.Forms
         }
         */
 
-        public Category ThisCategory;
+        public FolderGroupConfig ThisCategory;
         public List<ucShortcut> ControlList = new List<ucShortcut>();
         public System.Windows.Media.Color HoverColor;
 
@@ -92,7 +92,7 @@ namespace TaskbarGroupsEx.Forms
                 this.Icon = ImageFunctions.ExtractIconToBitmapSource(mPath + "\\GroupIcon.ico");
 
                 ControlList = new List<ucShortcut>();
-                ThisCategory = Category.ParseConfiguration(mPath);
+                ThisCategory = FolderGroupConfig.ParseConfiguration(mPath);
                 bdrMain.Background = new SolidColorBrush(ThisCategory.CatagoryBGColor);
                 System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, 37, 37, 37);
                 bdrMain.BorderBrush = new SolidColorBrush(BorderColor);
