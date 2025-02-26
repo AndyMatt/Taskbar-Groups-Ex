@@ -73,7 +73,17 @@ namespace TaskbarGroupsEx
         {
             public Int32 X;
             public Int32 Y;
+
+            public Win32Point()
+            {  X = 0; Y = 0; }
         };
+
+        public static Win32Point GetMousePosition()
+        {
+            Win32Point point = new Win32Point();
+            GetCursorPos(ref point);
+            return point;
+        }
 
         #endregion
     }
