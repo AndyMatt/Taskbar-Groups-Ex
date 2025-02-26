@@ -1,103 +1,145 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace TaskbarGroupsEx.Classes
 {
     public class Category
     {
-        public string Name;
-        public string ColorString = "Depriciated";
+        public string? Name;
+        public List<ProgramShortcut> ShortcutList = new List<ProgramShortcut>();
+        public int CollumnCount;
+        public System.Windows.Media.Color CatagoryBGColor = System.Windows.Media.Color.FromArgb(255, 31, 31, 31);
         public bool allowOpenAll = false;
-        public List<ProgramShortcut> ShortcutList;
-        public int Width; // not used aon
-        public double Opacity = 10;
+
+        public string ConfigurationPath = "";
         Regex specialCharRegex = new Regex("[*'\",_&#^@]");
 
-        private static int[] iconSizes = new int[] {16,32,64,128,256,512};
+        public static Category ParseConfiguration(string path)
+        {
+            string legacyConfigFilePath = Path.GetFullPath(path) + @"\ObjectData.xml";
+            if (System.IO.File.Exists(legacyConfigFilePath))
+            {
+                return LegacyCategoryFormat.ConvertToNewFormat(legacyConfigFilePath);
+            }
 
-        public System.Windows.Media.Color CatagoryBGColor = System.Windows.Media.Color.FromArgb(255, 31, 31, 31);
+            return new Category(path);
+        }
 
+        public Category(){}
 
         public Category(string path)
         {
-            // Use application's absolute path; (grabs the .exe)
-            // Gets the parent folder of the exe and concats the rest of the path
-            string fullPath;
+            ConfigurationPath = Path.GetFullPath(path) + @"\FolderGroupConfig.ini";
 
-            // Check if path is a full directory or part of a file name
-            // Passed from the main shortcut client and the config client
-
-            if (System.IO.File.Exists(@MainPath.path + @"\" + path + @"\ObjectData.xml"))
+            if (System.IO.File.Exists(ConfigurationPath))
             {
-                fullPath = @MainPath.path + @"\" + path + @"\ObjectData.xml";
-            }
-            else
-            {
-                fullPath = Path.GetFullPath(path + "\\ObjectData.xml");
-            }
-
-            System.Xml.Serialization.XmlSerializer reader =
-                new System.Xml.Serialization.XmlSerializer(typeof(Category));
-            using (StreamReader file = new StreamReader(fullPath))
-            {
-                Category category = (Category)reader.Deserialize(file);
-                this.Name = category.Name;
-                this.ShortcutList = category.ShortcutList;
-                this.Width = category.Width;
-                this.ColorString = category.ColorString;
-                if(this.ColorString != "Depriciated")
-                {
-                    System.Drawing.Color _color = ImageFunctions.FromString(this.ColorString);
-                    Byte _opacity = Convert.ToByte(category.Opacity * 255.0 / 100.0);
-                    category.CatagoryBGColor = System.Windows.Media.Color.FromArgb(_opacity, _color.R, _color.G, _color.B);
-                    this.ColorString = "Depriciated";
-                }
-                this.Opacity = category.Opacity;
-                this.allowOpenAll = category.allowOpenAll;
-                this.CatagoryBGColor = category.CatagoryBGColor;
+                ReadConfigData(ConfigurationPath);
             }
         }
 
-        public Category() // needed for XML serialization
+        void ReadConfigData(string fileName)
         {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            foreach (string line in File.ReadLines(fileName))
+            {
+                var lineData = line.Split('=');
+                data.Add(lineData[0], lineData[1]);
+            }
+
+            //Name
+            SetName(data["Name"]);
+
+            //Collumn Count
+            if(!Int32.TryParse(data["CollumnCount"], out CollumnCount)) { throw new Exception("Error While Reading 'CollumnCount' from Configuration File."); }
+
+            //Background Color
+            uint bgColor = uint.Parse(data["CatagoryBGColor"], NumberStyles.HexNumber);
+            CatagoryBGColor = ColorFromUnsignedInt(bgColor);
+
+            //AllowOpenAll
+            if (!Boolean.TryParse(data["allowOpenAll"], out allowOpenAll)) { throw new Exception("Error While Reading 'allowOpenAll' from Configuration File."); }
+
+            //Shortcut Count
+            int ShortcutCount = 0;
+            if (!Int32.TryParse(data["ShortcutCount"], out ShortcutCount)) { throw new Exception("Error While Reading 'ShortcutCount' from Configuration File."); }
+
+            for (int i = 0; i < ShortcutCount; i++)
+            {
+                string shortcutKey = "Shortcut" + i.ToString("D3");
+                ProgramShortcut newShortcut = new ProgramShortcut();
+                newShortcut.name = data[shortcutKey + ".Name"];
+                newShortcut.Arguments = data[shortcutKey + ".Arguments"];
+                newShortcut.WorkingDirectory = data[shortcutKey + ".WorkingDirectory"];
+                newShortcut.FilePath = data[shortcutKey + ".FilePath"];
+
+                bool isWindowsApp = false;
+                if (Boolean.TryParse(data[shortcutKey + ".isWindowsApp"], out isWindowsApp))
+                {
+                    newShortcut.isWindowsApp = isWindowsApp;
+                }
+                else
+                { 
+                    throw new Exception($"Error While Reading 'isWindowsApp' in {shortcutKey} from Configuration File."); 
+                }
+                ShortcutList.Add(newShortcut);
+            }
 
         }
+
+        void WriteConfigData(string path)
+        {
+            string configFilePath = path + @"\FolderGroupConfig.ini";
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data["Name"] = GetName();
+            data["CollumnCount"] = CollumnCount.ToString();
+            data["CatagoryBGColor"] = ColorToUnsignedInt(CatagoryBGColor).ToString("X4");
+            data["allowOpenAll"] = allowOpenAll.ToString();
+
+            data["ShortcutCount"] = ShortcutList.Count.ToString();
+            for(int i = 0; i < ShortcutList.Count; i++)
+            {
+                data["Shortcut" + i.ToString("D3")+ ".Name"] = ShortcutList[i].name;
+                data["Shortcut" + i.ToString("D3")+ ".Arguments"] = ShortcutList[i].Arguments;
+                data["Shortcut" + i.ToString("D3")+ ".WorkingDirectory"] = ShortcutList[i].WorkingDirectory;
+                data["Shortcut" + i.ToString("D3")+ ".FilePath"] = ShortcutList[i].FilePath;
+                data["Shortcut" + i.ToString("D3")+ ".isWindowsApp"] = ShortcutList[i].isWindowsApp.ToString();
+            }
+
+            File.WriteAllLines(configFilePath, data.Select(z => $"{z.Key}={z.Value}"));
+        }
+
+        private uint ColorToUnsignedInt(System.Windows.Media.Color color)
+        {
+            uint parsedColor = (uint)(color.A << 24) + (uint)(color.R << 16) + (uint)(color.G << 8) + color.B;
+            return parsedColor;
+        }
+
+        private System.Windows.Media.Color ColorFromUnsignedInt(uint color)
+        {
+            return System.Windows.Media.Color.FromArgb((byte)(color >> 24), (byte)(color << 8 >> 24), (byte)(color << 16 >> 24), (byte)(color << 24 >> 24));
+        }
+
+        public string GetName() { return Name ?? ""; }
+        public void SetName(string name) { Name = name; }
 
         public void CreateConfig(BitmapSource groupImage)
         {
-
             string path = @"config\" + this.Name;
-            //string filePath = path + @"\" + this.Name + "Group.exe";
-            //
-            // Directory and .exe
-            //
             System.IO.Directory.CreateDirectory(@path);
 
-            //System.IO.File.Copy(@"config\config.exe", @filePath);
-            //
-            // XML config
-            //
-            System.Xml.Serialization.XmlSerializer writer =
-                new System.Xml.Serialization.XmlSerializer(typeof(Category));
+            WriteConfigData(path);
 
-            using (FileStream file = System.IO.File.Create(@path + @"\ObjectData.xml"))
-            {
-                writer.Serialize(file, this);
-                file.Close();
-            }
-
-            // Create .ico
-            BitmapSource img = ImageFunctions.ResizeImage(groupImage, 256.0, 256.0); // Resize img if too big
-            ImageFunctions.SaveBitmapSourceToFile(img , path + @"\GroupImage.png");
-
+            ImageFunctions.SaveBitmapSourceToFile(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0), path + @"\GroupImage.png");
             createMultiIcon(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0, true), path + @"\GroupIcon.ico");
 
             // Through shellLink.cs class, pass through into the function information on how to construct the icon
@@ -110,7 +152,7 @@ namespace TaskbarGroupsEx.Classes
                  Path.GetFullPath(@path),
                  Path.GetFullPath(path + @"\GroupIcon.ico"),
                  path + "\\" + this.Name + ".lnk",
-                 this.Name
+                 this.GetName()
             );
 
 
@@ -118,29 +160,28 @@ namespace TaskbarGroupsEx.Classes
             cacheIcons();
 
             System.IO.File.Move(@path + "\\" + this.Name + ".lnk",
-                Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.Name, @"(_)+", " ") + ".lnk")); // Move .lnk to correct directory
+                Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk")); // Move .lnk to correct directory
+        }
+
+        public void OnFinishConversion(string path)
+        {
+            File.Delete(path);
+            string? ConfigDirectory = Path.GetDirectoryName(path);
+            if (ConfigDirectory != null)
+            {
+                WriteConfigData(ConfigDirectory);
+            }
         }
 
         private static void createMultiIcon(BitmapSource iconImage, string filePath)
         {
-
-
-            var diffList = from number in iconSizes
-                select new
-                    {
-                        number,
-                        difference = Math.Abs(number - iconImage.Height)
-                    };
-            var nearestSize = (from diffItem in diffList
-                          orderby diffItem.difference
-                          select diffItem).First().number;
-
+            double mipSize = 256.0;
             List<BitmapSource> iconList = new List<BitmapSource>();
 
-            while (nearestSize != 8)
+            while (mipSize > 8.0) /* Minimum Icon Size */
             {
-                iconList.Add(ImageFunctions.ResizeImage(iconImage, nearestSize, nearestSize) as BitmapSource);
-                nearestSize = (int)Math.Round((decimal) nearestSize / 2);
+                iconList.Add(ImageFunctions.ResizeImage(iconImage, mipSize, mipSize) as BitmapSource);
+                mipSize = Math.Round(mipSize / 2.0);
             }
 
             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -171,7 +212,7 @@ namespace TaskbarGroupsEx.Classes
         {
 
             // Defines the paths for the icons folder
-            string path = @MainPath.path + @"\config\" + this.Name;
+            string path = @MainPath.Config + this.Name;
             string iconPath = path + "\\Icons\\";
 
             // Check and delete current icons folder to completely rebuild the icon cache
@@ -239,8 +280,7 @@ namespace TaskbarGroupsEx.Classes
                     // Try to construct the path like if it existed
                     // If it does, directly load it into memory and return it
                     // If not then it would throw an exception in which the below code would catch it
-                    String cacheImagePath = @Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + 
-                        @"\config\" + this.Name + @"\Icons\" + ((shortcutObject.isWindowsApp) ? specialCharRegex.Replace(programPath, string.Empty) : 
+                    String cacheImagePath = MainPath.Config + this.Name + @"\Icons\" + ((shortcutObject.isWindowsApp) ? specialCharRegex.Replace(programPath, string.Empty) : 
                         @Path.GetFileNameWithoutExtension(programPath)) + (Directory.Exists(programPath)? "_FolderObjTSKGRoup.jpg" : ".png");
 
                     using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(cacheImagePath)))
@@ -261,7 +301,7 @@ namespace TaskbarGroupsEx.Classes
                     // Checks if the original file even exists to make sure to not do any extra operations
 
                     // Same processing as above in cacheIcons()
-                    String path = MainPath.path + @"\config\" + this.Name + @"\Icons\" + Path.GetFileNameWithoutExtension(programPath) + (Directory.Exists(programPath) ? "_FolderObjTSKGRoup.png" : ".png");
+                    String path = MainPath.Config + this.Name + @"\Icons\" + Path.GetFileNameWithoutExtension(programPath) + (Directory.Exists(programPath) ? "_FolderObjTSKGRoup.png" : ".png");
 
                     BitmapSource finalImage;
 
@@ -274,7 +314,7 @@ namespace TaskbarGroupsEx.Classes
                         finalImage = ImageFunctions.IconToBitmapSource(handleFolder.GetFolderIcon(programPath));
                     } else 
                     {
-                        finalImage = ImageFunctions.IconToBitmapSource(Icon.ExtractAssociatedIcon(programPath));
+                        finalImage = ImageFunctions.IconPathToBitmapSource(programPath);
                     }
 
 
@@ -302,7 +342,7 @@ namespace TaskbarGroupsEx.Classes
             var imgguid = i.RawFormat.Guid;
             foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
             {
-                if (codec.FormatID == imgguid)
+                if (codec.FormatID == imgguid && codec.FilenameExtension != null)
                     return codec.FilenameExtension;
             }
             return "image/unknown";

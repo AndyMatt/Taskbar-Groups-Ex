@@ -1,13 +1,7 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Input;
-using System.Windows.Interop;
-using TaskbarGroupsEx;
 using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.Forms;
 
@@ -18,101 +12,67 @@ namespace TaskbarGroupsEx
     /// </summary>
     public partial class App : Application
     {
-        public App()
-        {
-            TaskbarGroupsEx.Classes.MainPath.path = Path.GetFullPath(new Uri(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase)).LocalPath);
-            TaskbarGroupsEx.Classes.MainPath.exeString = Path.GetFullPath(new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
-        }
 
         public static string[] arguments = Environment.GetCommandLineArgs();
+        static Dictionary<string, frmMain> cachedGroups = new Dictionary<string, frmMain>();
 
-        // Define functions to set AppUserModelID
-        [DllImport("shell32.dll", SetLastError = true)]
-        static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
-        
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool GetCursorPos(ref Win32Point pt);
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct Win32Point
+        void WaitForDebugger()
         {
-            public Int32 X;
-            public Int32 Y;
-        };
-        public static Point GetMousePosition()
+            while (!Debugger.IsAttached)
+            {
+                Thread.Sleep(1000);
+            }
+        }
+        bool CheckWriteAccessToDirectory(string path)
         {
-            var w32Mouse = new Win32Point();
-            GetCursorPos(ref w32Mouse);
-
-            return new Point(w32Mouse.X, w32Mouse.Y);
+            String TempFilePath = path + Path.GetRandomFileName() + ".lock";
+            try
+            {
+                FileStream Fs = File.Create(TempFilePath);
+                Fs.Close();
+                File.Delete(TempFilePath);
+                return true; 
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        static Dictionary<string, frmMain> cachedGroups = new Dictionary<string, frmMain>();
+        void RelauchAsAdmin()
+        {
+            Process configTool = new Process
+            {
+                StartInfo =
+                {
+                    FileName = MainPath.exeString,
+                    Verb = "runas",
+                    Arguments = String.Join(" ", arguments.Skip(1)),
+                    UseShellExecute=true
+                }
+            };
+
+            if(configTool.Start())
+            {
+                Process.GetCurrentProcess().Kill();
+            }
+        }
 
         [STAThread]
         public void EntryPoint(object sender, StartupEventArgs e)
         {
-            /*
-            while (!Debugger.IsAttached)
-            {
-                Thread.Sleep(1000);
-                //NativeMethods.MessageBox("Waiting for Debugger");
-            }*/
-
             ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
-            //this.Activated += AfterLoading;
 
-            // Use existing methods to obtain cursor already imported as to not import any extra functions
-            // Pass as two variables instead of Point due to Point requiring System.Drawing
-            Point MousePos = GetMousePosition();
+            WaitForDebugger();
 
-            // Set the MainPath to the absolute path where the exe is located
-            MainPath.path = Path.GetFullPath(new Uri(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase)).LocalPath);
-            MainPath.exeString = Path.GetFullPath(new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
-
-            // Creats folder for JIT compilation 
-            Directory.CreateDirectory($"{MainPath.path}\\JITComp");
-
-            // Creates directory in case it does not exist for config files
-            Directory.CreateDirectory($"{MainPath.path}\\config");
-            Directory.CreateDirectory($"{MainPath.path}\\Shortcuts");
-
-            /*
-            try
+            if(MainPath.path != null && !CheckWriteAccessToDirectory(MainPath.path))
             {
-                System.IO.File.Create(MainPath.path + "\\directoryTestingDocument.txt").Close();
-                System.IO.File.Delete(MainPath.path + "\\directoryTestingDocument.txt");
+                RelauchAsAdmin();
             }
-            catch
-            {
-                using (Process configTool = new Process())
-                {
-                    configTool.StartInfo.FileName = MainPath.exeString;
-                    configTool.StartInfo.Verb = "runas";
-                    try
-                    {
-                        configTool.Start();
-                    } catch
-                    {
-                        Process.GetCurrentProcess().Kill();
-                    }
-                }
-            }*/
 
-            if (arguments.Length > 1 && arguments[1] != "/s") // Checks for additional arguments; opens either main application or taskbar drawer application
-            {
-                SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.menu." + arguments[1]);
-
-                new frmMain(arguments[1], MousePos).Show();
-                // Sets the AppUserModelID to tjackenpacken.taskbarGroup.menu.groupName
-                // Distinguishes each shortcut process from one another to prevent them from stacking with the main application
-
-
-            } else
-            {
-                // See comment above
-                SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.main");
+            if (arguments.Length > 1) {
+                new frmMain(arguments[1]).Show();
+            } else {
                 new frmClient().Show();
             }
         }

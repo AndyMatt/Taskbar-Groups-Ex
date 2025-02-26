@@ -43,7 +43,13 @@ namespace TaskbarGroupsEx.Classes
                 flags);
 
             if (res == IntPtr.Zero)
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+            {
+                int err = Marshal.GetHRForLastWin32Error();
+                Exception? exception = Marshal.GetExceptionForHR(err);
+                exception ??= new Exception("Folder Icon Error");
+
+                throw exception;
+            }
 
             // Load the icon from an HICON handle  
             Icon.FromHandle(shfi.hIcon);

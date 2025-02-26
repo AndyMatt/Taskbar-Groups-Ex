@@ -24,6 +24,7 @@ using WpfScreenHelper;
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
 using Interop.UIAutomationClient;
+using System.Text.RegularExpressions;
 
 
 namespace TaskbarGroupsEx.Forms
@@ -34,10 +35,10 @@ namespace TaskbarGroupsEx.Forms
     public partial class frmMain : Window
     {
         [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        public static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
         [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
 
         /*
         // Allow doubleBuffering drawing each frame to memory and then onto screen
@@ -55,11 +56,15 @@ namespace TaskbarGroupsEx.Forms
         */
 
         public Category ThisCategory;
-        public List<ucShortcut> ControlList;
+        public List<ucShortcut> ControlList = new List<ucShortcut>();
         public System.Windows.Media.Color HoverColor;
 
-        private string passedDirec;
+        private string mShortcutName;
+        private string mPath;
         public System.Windows.Point mouseClick;
+        public Panel shortcutPanel;
+
+
 
         public double Right
         {
@@ -69,22 +74,25 @@ namespace TaskbarGroupsEx.Forms
         //------------------------------------------------------------------------------------
         // CTOR AND LOAD
         //
-        public frmMain(string passedDirectory, System.Windows.Point cursorPos)
+        public frmMain(string ShortcutName)
         {
+            NativeMethods.SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.menu." + ShortcutName);
+            System.Runtime.ProfileOptimization.StartProfile("frmMain.Profile");
+
             InitializeComponent();
 
-            System.Runtime.ProfileOptimization.StartProfile("frmMain.Profile");
-            passedDirec = passedDirectory;
-            mouseClick = cursorPos;
+            mShortcutName = ShortcutName;
+            mPath = MainPath.Config + mShortcutName;
+            mouseClick = new System.Windows.Point(0, 0);
             this.WindowStyle = WindowStyle.None;
 
-            this.Icon = ImageFunctions.ExtractIconToBitmapSource(MainPath.path + "\\config\\" + passedDirec + "\\GroupIcon.ico");
 
-            if (Directory.Exists(@MainPath.path + @"\config\" + passedDirec))
+            if (Directory.Exists(mPath))
             {
-                ControlList = new List<ucShortcut>();
+                this.Icon = ImageFunctions.ExtractIconToBitmapSource(mPath + "\\GroupIcon.ico");
 
-                ThisCategory = new Category($"config\\{passedDirec}");
+                ControlList = new List<ucShortcut>();
+                ThisCategory = Category.ParseConfiguration(mPath);
                 bdrMain.Background = new SolidColorBrush(ThisCategory.CatagoryBGColor);
                 System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, 37, 37, 37);
                 bdrMain.BorderBrush = new SolidColorBrush(BorderColor);
@@ -131,7 +139,7 @@ namespace TaskbarGroupsEx.Forms
                         string sName = element.CurrentName;
                         string sAutomationId = element.CurrentAutomationId;
                         tagRECT rect = element.CurrentBoundingRectangle;
-                        if (sAutomationId.Contains("tjackenpacken.taskbarGroup.menu."+ passedDirec))
+                        if (sAutomationId.Contains("tjackenpacken.taskbarGroup.menu."+ mShortcutName))
                         {
                             this.Left = rect.left + ((rect.right - rect.left) / 2) - (pnlShortcutIcons.Width/2);
                             this.Top = rect.top - (pnlShortcutIcons.Height);
@@ -324,14 +332,14 @@ namespace TaskbarGroupsEx.Forms
         {
             // Check if icon caches exist for the category being loaded
             // If not then rebuild the icon cache
-            if (!Directory.Exists(@MainPath.path + @"\config\" + ThisCategory.Name + @"\Icons\"))
+            if (!Directory.Exists(@MainPath.Config + ThisCategory.GetName() + @"\Icons\"))
             {
                 ThisCategory.cacheIcons();
             }
 
-            double columnCount = Math.Ceiling((double)ThisCategory.ShortcutList.Count / ThisCategory.Width);
+            double columnCount = Math.Ceiling((double)ThisCategory.ShortcutList.Count / ThisCategory.CollumnCount);
             pnlShortcutIcons.Height = columnCount * 45 ;
-            pnlShortcutIcons.Width = (ThisCategory.Width * 55);
+            pnlShortcutIcons.Width = (ThisCategory.CollumnCount * 55);
 
             foreach (ProgramShortcut psc in ThisCategory.ShortcutList)
             {
@@ -414,8 +422,6 @@ namespace TaskbarGroupsEx.Forms
         //
         // endregion
         //
-        public System.Windows.Controls.Image shortcutPic;
-        public Panel shortcutPanel;
 
         private void Window_Activated(object sender, EventArgs e)
         {

@@ -48,7 +48,7 @@
             <RadioButton x:Name="radioCustom" Content="Custom Color" HorizontalAlignment="Center" Margin="0,69,0,0" VerticalAlignment="Top" Foreground="White" Width="115" Height="24" FontSize="14" VerticalContentAlignment="Center" Click="radioCustom_Click"/>
             <Rectangle x:Name="pnlCustomColor" HorizontalAlignment="Left" Height="18" Margin="242,0,0,0" VerticalAlignment="Center" Width="18" Stroke="#FF5D5D5D" Fill="#FF1F1F1B"/>
             <TextBlock x:Name="lblOpacityTooltip" HorizontalAlignment="Left" Margin="127,101,0,0" TextWrapping="Wrap" Text="Opacity:" VerticalAlignment="Top" Width="63" Height="20" Foreground="White" FontSize="15" TextAlignment="Center"/>
-            <TextBlock x:Name="lblOpacity" HorizontalAlignment="Left" Margin="185,102,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="35" Height="20" Foreground="White" FontSize="15" TextAlignment="Right"/>
+            <TextBlock x:Name="lblOpacity" HorizontalAlignment="Left" Margin="185,102,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="35" Height="20" Foreground="White" FontSize="15" TextAlignment="Right"/>
             <TextBlock x:Name="lblPercent" HorizontalAlignment="Left" Margin="217,102,0,0" TextWrapping="Wrap" Text="%" VerticalAlignment="Top" Width="21" Height="20" Foreground="White" FontSize="15" TextAlignment="Center"/>
             <Button x:Name="numOpacUp" Content="▲" HorizontalAlignment="Left" Margin="242,97,0,0" VerticalAlignment="Top" Background="#00000000" Foreground="White" BorderBrush="#00000000" FontStretch="UltraExpanded" Width="12" RenderTransformOrigin="0.5,1" Height="15" VerticalContentAlignment="Bottom" Padding="0,0,0,0" Click="numOpacUp_Click">
                 <Button.RenderTransform>

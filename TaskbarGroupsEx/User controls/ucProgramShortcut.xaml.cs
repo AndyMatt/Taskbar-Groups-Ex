@@ -128,12 +128,14 @@ namespace TaskbarGroupsEx
         {
             cmdNumUp.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
             MotherForm.RepositionControl(this, -1);
+            e.Handled = true;
         }
 
         private void cmdNumDown_Click(object sender, RoutedEventArgs e)
         {
             cmdNumDown.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
             MotherForm.RepositionControl(this, 1);
+            e.Handled = true;
         }
 
         private void cmdDelete_Click(object sender, RoutedEventArgs e)

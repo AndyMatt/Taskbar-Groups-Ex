@@ -62,16 +62,10 @@ namespace TaskbarGroupsEx.Classes
                     if (filesInDir.Count != 0)
                     {
                         return getLogo(filesInDir.First(), file);
-                    } else
-                    {
-                        return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(file).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
                     }
-                        
                 }
-            } else
-            {
-                return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(file).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             }
+            return ImageFunctions.ExtractIconToBitmapSource(file);
         }
 
         private static List<string> getLogoFolder(String keyname, DirectoryInfo logoDirectory)

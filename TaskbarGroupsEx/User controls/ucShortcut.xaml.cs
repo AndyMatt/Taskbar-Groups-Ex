@@ -45,7 +45,10 @@ namespace TaskbarGroupsEx.User_Controls
 
         public void ucShortcut_OnClick()
         {
-            if (Psc != null && Psc.isWindowsApp)
+            if (Psc == null)
+                return;
+
+            if(Psc.isWindowsApp)
             {
                 Process p = new Process() { StartInfo = new ProcessStartInfo() { UseShellExecute = true, FileName = $@"shell:appsFolder\{Psc.FilePath}" } };
                 p.Start();

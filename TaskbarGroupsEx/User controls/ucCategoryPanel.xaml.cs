@@ -32,10 +32,10 @@ namespace TaskbarGroupsEx
             InitializeComponent();
             Client = client;
             Category = category;
-            lblTitle.Text = Regex.Replace(category.Name, @"(_)+", " ");
-            picGroupIcon.Source = Category.LoadIconImage();
+            lblTitle.Text = Regex.Replace(category.GetName(), @"(_)+", " ");
+            picGroupIcon.Source = category.LoadIconImage();
 
-            if (!Directory.Exists((@"config\" + category.Name) + "\\Icons\\"))
+            if (!Directory.Exists((@"config\" + category.GetName()) + "\\Icons\\"))
             {
                 category.cacheIcons();
             }
@@ -78,7 +78,7 @@ namespace TaskbarGroupsEx
             // Open the shortcut folder for the group when click on category panel
 
             // Build path based on the directory of the main .exe file
-            string filePath = System.IO.Path.GetFullPath(new Uri($"{MainPath.path}\\Shortcuts").LocalPath + "\\" + Category.Name + ".lnk");
+            string filePath = System.IO.Path.GetFullPath(new Uri($"{MainPath.Shortcuts}").LocalPath + "\\" + Category.GetName() + ".lnk");
 
             // Open directory in explorer and highlighting file
             System.Diagnostics.Process.Start("explorer.exe", string.Format("/select,\"{0}\"", @filePath));

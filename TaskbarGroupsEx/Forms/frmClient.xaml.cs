@@ -1,33 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
-using Windows.Data.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using TaskbarGroupsEx.Classes;
-using System.Diagnostics;
 using System.Windows.Navigation;
+using Windows.Data.Json;
+using TaskbarGroupsEx.Classes;
+using System.Windows.Shapes;
 
 namespace TaskbarGroupsEx
 {
-    /// <summary>
-    /// Interaction logic for frmClient.xaml
-    /// </summary>
     public partial class frmClient : Window
     {
         public frmClient()
         {
+            NativeMethods.SetCurrentProcessExplicitAppUserModelID("tjackenpacken.taskbarGroup.main");
             System.Runtime.ProfileOptimization.StartProfile("frmClient.Profile");
             InitializeComponent();
             Reload();
@@ -40,17 +30,9 @@ namespace TaskbarGroupsEx
         }
         public void Reload()
         {
-            // flush and reload existing groups
             pnlExistingGroups.Children.Clear();
-            //pnlExistingGroups.Height = 0;
 
-            string configPath = @MainPath.path + @"\config";
-            if (!Directory.Exists(configPath))
-            {
-                Directory.CreateDirectory(configPath);
-            }
-
-            string[] subDirectories = Directory.GetDirectories(configPath);
+            string[] subDirectories = Directory.GetDirectories(@MainPath.Config);
             foreach (string dir in subDirectories)
             {
                 try
@@ -68,7 +50,7 @@ namespace TaskbarGroupsEx
                 lblHelpTitle.Text = "Click on a group to add a taskbar shortcut";
                 pnlHelp.Visibility = Visibility.Hidden;
             }
-            else // helper if groups are created
+            else
             {
                 lblHelpTitle.Text = "Press on \"Add Taskbar group\" to get started";
                 pnlHelp.Visibility = Visibility.Hidden;
@@ -77,7 +59,7 @@ namespace TaskbarGroupsEx
 
         public void LoadCategory(string dir)
         {
-            Classes.Category category = new Classes.Category(dir);
+            Classes.Category category = Category.ParseConfiguration(dir);
             ucCategoryPanel newCategory = new ucCategoryPanel(this, category);
             pnlExistingGroups.Children.Add(newCategory);
             newCategory.MouseEnter += new MouseEventHandler((sender, e) => EnterControl(sender, e, newCategory));
