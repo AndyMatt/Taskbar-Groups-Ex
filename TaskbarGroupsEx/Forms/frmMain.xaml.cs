@@ -194,8 +194,7 @@ namespace TaskbarGroupsEx.Forms
         private void frmMain_Deactivate(object sender, EventArgs e)
         {
             // closes program if user clicks outside form
-            //this.Close();
-            this.Visibility = Visibility.Hidden;
+            this.Close();
         }
 
         // Keyboard shortcut handlers
