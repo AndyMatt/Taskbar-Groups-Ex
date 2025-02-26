@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.DirectoryServices.ActiveDirectory;
@@ -40,22 +40,7 @@ namespace TaskbarGroupsEx.Forms
         [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
 
-        /*
-        // Allow doubleBuffering drawing each frame to memory and then onto screen
-        // Solves flickering issues mostly as the entire rendering of the screen is done in 1 operation after being first loaded to memory
-        protected override CreateParams CreateParams
-
-        {
-            get
-            {
-                CreateParams cp = base.CreateParams;
-                cp.ExStyle |= 0x02000000;
-                return cp;
-            }
-        }
-        */
-
-        public FolderGroupConfig ThisCategory;
+        public FolderGroupConfig? fgConfig;
         public List<ucShortcut> ControlList = new List<ucShortcut>();
         public System.Windows.Media.Color HoverColor;
 
@@ -92,12 +77,12 @@ namespace TaskbarGroupsEx.Forms
                 this.Icon = ImageFunctions.ExtractIconToBitmapSource(mPath + "\\GroupIcon.ico");
 
                 ControlList = new List<ucShortcut>();
-                ThisCategory = FolderGroupConfig.ParseConfiguration(mPath);
-                bdrMain.Background = new SolidColorBrush(ThisCategory.CatagoryBGColor);
-                System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(ThisCategory.CatagoryBGColor.A, 37, 37, 37);
+                fgConfig = FolderGroupConfig.ParseConfiguration(mPath);
+                bdrMain.Background = new SolidColorBrush(fgConfig.CatagoryBGColor);
+                System.Windows.Media.Color BorderColor = System.Windows.Media.Color.FromArgb(fgConfig.CatagoryBGColor.A, 37, 37, 37);
                 bdrMain.BorderBrush = new SolidColorBrush(BorderColor);
                 
-                HoverColor = System.Windows.Media.Color.Multiply(ThisCategory.CatagoryBGColor, 3.0f);
+                HoverColor = System.Windows.Media.Color.Multiply(fgConfig.CatagoryBGColor, 3.0f);
             }
             else
             {
@@ -332,23 +317,23 @@ namespace TaskbarGroupsEx.Forms
         {
             // Check if icon caches exist for the category being loaded
             // If not then rebuild the icon cache
-            if (!Directory.Exists(@MainPath.Config + ThisCategory.GetName() + @"\Icons\"))
+            if (!Directory.Exists(@MainPath.Config + fgConfig.GetName() + @"\Icons\"))
             {
-                ThisCategory.cacheIcons();
+                fgConfig.cacheIcons();
             }
 
-            double columnCount = Math.Ceiling((double)ThisCategory.ShortcutList.Count / ThisCategory.CollumnCount);
+            double columnCount = Math.Ceiling((double)fgConfig.ShortcutList.Count / fgConfig.CollumnCount);
             pnlShortcutIcons.Height = columnCount * 45 ;
-            pnlShortcutIcons.Width = (ThisCategory.CollumnCount * 55);
+            pnlShortcutIcons.Width = (fgConfig.CollumnCount * 55);
 
-            foreach (ProgramShortcut psc in ThisCategory.ShortcutList)
+            foreach (ProgramShortcut psc in fgConfig.ShortcutList)
             {
                 // Building shortcut controls
                 ucShortcut pscPanel = new ucShortcut()
                 {
                     Psc = psc,
                     MotherForm = this,
-                    ThisCategory = ThisCategory,
+                    ThisCategory = fgConfig,
                 };
 
                 pnlShortcutIcons.Children.Add(pscPanel);
@@ -401,7 +386,7 @@ namespace TaskbarGroupsEx.Forms
         private void frmMain_KeyUp(object sender, KeyEventArgs e)
         {
             //System.Diagnostics.Debugger.Launch();
-            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Key == Key.Enter && ThisCategory.allowOpenAll)
+            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Key == Key.Enter && fgConfig.allowOpenAll)
             {
                 foreach (ucShortcut usc in this.ControlList)
                     usc.ucShortcut_OnClick();

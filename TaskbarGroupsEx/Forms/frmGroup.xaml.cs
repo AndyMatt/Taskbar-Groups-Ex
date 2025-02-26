@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -15,7 +15,7 @@ namespace TaskbarGroupsEx
 {
     public partial class frmGroup : Window
     {
-        public FolderGroupConfig? Category;
+        public FolderGroupConfig? fgConfig;
         public frmClient Client;
         public bool IsNew;
         private String[] imageExt = new String[] { ".png", ".jpg", ".jpe", ".jfif", ".jpeg", };
@@ -46,29 +46,29 @@ namespace TaskbarGroupsEx
             if (category == null)
             {
                 newExt = imageExt.Concat(specialImageExt).ToArray();
-                Category = new FolderGroupConfig { ShortcutList = new List<ProgramShortcut>() };
+                fgConfig = new FolderGroupConfig { ShortcutList = new List<ProgramShortcut>() };
                 clmnDelete.Width = new GridLength(0.0);
                 radioDark.IsChecked = true;
             }
             else
             {
-                Category = category;
+                fgConfig = category;
 
                 this.Title = "Edit group";
-                pnlAllowOpenAll.IsChecked = Category.allowOpenAll;
-                cmdAddGroupIcon.Source = Category.LoadIconImage();
-                lblNum.Text = Category.CollumnCount.ToString();
-                txtGroupName.Text = Regex.Replace(Category.GetName(), @"(_)+", " ");
+                pnlAllowOpenAll.IsChecked = fgConfig.allowOpenAll;
+                cmdAddGroupIcon.Source = fgConfig.LoadIconImage();
+                lblNum.Text = fgConfig.CollumnCount.ToString();
+                txtGroupName.Text = Regex.Replace(fgConfig.GetName(), @"(_)+", " ");
 
-                Color categoryColor = Category.CatagoryBGColor;
+                Color categoryColor = fgConfig.CatagoryBGColor;
 
                 UpdateOpacityControls(Convert.ToInt32(((double)categoryColor.A) * 100.0 / 255.0));
 
-                if (Category.CatagoryBGColor == System.Windows.Media.Color.FromArgb(Category.CatagoryBGColor.A, 31, 31, 31))
+                if (fgConfig.CatagoryBGColor == System.Windows.Media.Color.FromArgb(fgConfig.CatagoryBGColor.A, 31, 31, 31))
                 {
                     radioDark.IsChecked = true;
                 }
-                else if (Category.CatagoryBGColor == System.Windows.Media.Color.FromArgb(Category.CatagoryBGColor.A, 230, 230, 230))
+                else if (fgConfig.CatagoryBGColor == System.Windows.Media.Color.FromArgb(fgConfig.CatagoryBGColor.A, 230, 230, 230))
                 {
                     radioLight.IsChecked = true;
                 }
@@ -79,9 +79,9 @@ namespace TaskbarGroupsEx
                 }
 
                 // Loading existing shortcutpanels
-                for (int i = 0; i < Category.ShortcutList.Count; i++)
+                for (int i = 0; i < fgConfig.ShortcutList.Count; i++)
                 {
-                    LoadShortcut(Category.ShortcutList[i], i);
+                    LoadShortcut(fgConfig.ShortcutList[i], i);
                 }
             }
         }
@@ -109,7 +109,7 @@ namespace TaskbarGroupsEx
 
             lblErrorShortcut.Visibility = Visibility.Hidden; // resetting error msg
 
-            if (Category.ShortcutList.Count >= 20)
+            if (fgConfig.ShortcutList.Count >= 20)
             {
                 lblErrorShortcut.Text = "Max 20 shortcuts in one group";
                 //lblErrorShortcut.BringToFront();
@@ -175,8 +175,8 @@ namespace TaskbarGroupsEx
             String workingDirec = getProperDirectory(file);
 
             ProgramShortcut psc = new ProgramShortcut() { FilePath = Environment.ExpandEnvironmentVariables(file), isWindowsApp = isExtension, WorkingDirectory = workingDirec }; //Create new shortcut obj
-            Category.ShortcutList.Add(psc); // Add to panel shortcut list
-            LoadShortcut(psc, Category.ShortcutList.Count - 1);
+            fgConfig.ShortcutList.Add(psc); // Add to panel shortcut list
+            LoadShortcut(psc, fgConfig.ShortcutList.Count - 1);
             RefreshProgramControls();
         }
 
@@ -185,7 +185,7 @@ namespace TaskbarGroupsEx
         {
             resetSelection();
 
-            Category.ShortcutList.Remove(psc);
+            fgConfig.ShortcutList.Remove(psc);
             resetSelection();
             //bool before = true;
             //int i = 0;
@@ -442,7 +442,7 @@ namespace TaskbarGroupsEx
                 lblErrorTitle.Visibility = Visibility.Visible;
             }
             else if (IsNew && Directory.Exists(@MainPath.Config + txtGroupName.Text) ||
-                     !IsNew && Category.GetName() != txtGroupName.Text && Directory.Exists(@MainPath.Config + txtGroupName.Text))
+                     !IsNew && fgConfig.GetName() != txtGroupName.Text && Directory.Exists(@MainPath.Config + txtGroupName.Text))
             {
                 lblErrorTitle.Text = "There is already a group with that name";
                 lblErrorTitle.Visibility = Visibility.Visible;
@@ -457,7 +457,7 @@ namespace TaskbarGroupsEx
                 lblErrorIcon.Text = "Must select group icon";
                 lblErrorIcon.Visibility = Visibility.Visible;
             }
-            else if (Category.ShortcutList.Count == 0) // Verify shortcuts
+            else if (fgConfig.ShortcutList.Count == 0) // Verify shortcuts
             {
                 lblErrorShortcut.Text = "Must select at least one shortcut";
                 lblErrorShortcut.Visibility = Visibility.Visible;
@@ -481,8 +481,8 @@ namespace TaskbarGroupsEx
                         //
                         // Delete old config
                         //
-                        string configPath = @MainPath.Config + Category.GetName();
-                        string shortcutPath = @MainPath.Shortcuts + Regex.Replace(Category.GetName(), @"(_)+", " ") + ".lnk";
+                        string configPath = @MainPath.Config + fgConfig.GetName();
+                        string shortcutPath = @MainPath.Shortcuts + Regex.Replace(fgConfig.GetName(), @"(_)+", " ") + ".lnk";
 
                         try
                         {
@@ -502,13 +502,13 @@ namespace TaskbarGroupsEx
                     }
 
                     // Creating new config
-                    Category.CollumnCount = int.Parse(lblNum.Text);
+                    fgConfig.CollumnCount = int.Parse(lblNum.Text);
 
                     // Normalize string so it can be used in path; remove spaces
-                    Category.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
+                    fgConfig.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
 
-                    Category.CreateConfig(cmdAddGroupIcon.Source as BitmapSource); // Creating group config files
-                    Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + Category.GetName())); // Loading visuals
+                    fgConfig.CreateConfig(cmdAddGroupIcon.Source as BitmapSource); // Creating group config files
+                    Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
 
                     Close();
                     Client.Reload();
@@ -523,15 +523,15 @@ namespace TaskbarGroupsEx
         // Delete group
         private void cmdDelete_Click(object sender, EventArgs e)
         {
-            if(Category == null)
+            if(fgConfig == null)
                 return;
 
             resetSelection();
 
             try
             {
-                string configPath = @MainPath.Config + Category.GetName();
-                string shortcutPath = @MainPath.Shortcuts + Regex.Replace(Category.GetName(), @"(_)+", " ") + ".lnk";
+                string configPath = @MainPath.Config + fgConfig.GetName();
+                string shortcutPath = @MainPath.Shortcuts + Regex.Replace(fgConfig.GetName(), @"(_)+", " ") + ".lnk";
 
                 var dir = new DirectoryInfo(configPath);
 
@@ -605,21 +605,21 @@ namespace TaskbarGroupsEx
         // Color radio buttons
         private void radioCustom_Click(object sender, RoutedEventArgs e)
         {
-            frmColorPicker _colorPicker = new frmColorPicker(pnlCustomColor, Category.CatagoryBGColor);
+            frmColorPicker _colorPicker = new frmColorPicker(pnlCustomColor, fgConfig.CatagoryBGColor);
             if (_colorPicker.ShowDialog() == true)
             {
-                Category.CatagoryBGColor = _colorPicker.SelectedColor;
+                fgConfig.CatagoryBGColor = _colorPicker.SelectedColor;
                 pnlCustomColor.Visibility = Visibility.Visible;
                 pnlCustomColor.Fill = new SolidColorBrush(_colorPicker.SelectedColor);
-                lblOpacity.Text = Convert.ToInt32(((double)Category.CatagoryBGColor.A) * 100.0 / 255.0).ToString();
+                lblOpacity.Text = Convert.ToInt32(((double)fgConfig.CatagoryBGColor.A) * 100.0 / 255.0).ToString();
             }
         }
 
         private void radioDark_Click(object sender, RoutedEventArgs e)
         {
-            if (Category != null)
+            if (fgConfig != null)
             {
-                Category.CatagoryBGColor = System.Windows.Media.Color.FromArgb(Category.CatagoryBGColor.A, 31, 31, 31);
+                fgConfig.CatagoryBGColor = System.Windows.Media.Color.FromArgb(fgConfig.CatagoryBGColor.A, 31, 31, 31);
                 pnlCustomColor.Visibility = Visibility.Hidden;
                 UpdateOpacityControls(int.Parse(lblOpacity.Text));
             }
@@ -627,9 +627,9 @@ namespace TaskbarGroupsEx
 
         private void radioLight_Click(object sender, RoutedEventArgs e)
         {
-            if (Category != null)
+            if (fgConfig != null)
             {
-                Category.CatagoryBGColor = System.Windows.Media.Color.FromArgb(Category.CatagoryBGColor.A, 230, 230, 230);
+                fgConfig.CatagoryBGColor = System.Windows.Media.Color.FromArgb(fgConfig.CatagoryBGColor.A, 230, 230, 230);
                 pnlCustomColor.Visibility = Visibility.Hidden;
                 UpdateOpacityControls(int.Parse(lblOpacity.Text));
             }
@@ -638,7 +638,7 @@ namespace TaskbarGroupsEx
         // Opacity buttons
         private void numOpacUp_Click(object sender, RoutedEventArgs e)
         {
-            if (Category == null)
+            if (fgConfig == null)
                 return;
             
             int opacity = Math.Min(int.Parse(lblOpacity.Text) + 10, 100);
@@ -647,7 +647,7 @@ namespace TaskbarGroupsEx
 
         private void numOpacDown_Click(object sender, RoutedEventArgs e)
         {
-            if (Category == null)
+            if (fgConfig == null)
                 return;
 
             int opacity = Math.Max(int.Parse(lblOpacity.Text) - 10, 0);
@@ -670,12 +670,12 @@ namespace TaskbarGroupsEx
 
         private void UpdateOpacityControls(int opacity)
         {
-            if (Category == null)
+            if (fgConfig == null)
                 return;
 
             lblOpacity.Text = opacity.ToString();
-            Category.CatagoryBGColor.A = (byte)(opacity * 255 / 100);
-            pnlCustomColor.Fill = new SolidColorBrush(Category.CatagoryBGColor);
+            fgConfig.CatagoryBGColor.A = (byte)(opacity * 255 / 100);
+            pnlCustomColor.Fill = new SolidColorBrush(fgConfig.CatagoryBGColor);
 
             _ = opacity == 0 ? DisableOpacityButton(numOpacDown) : EnableOpacityButton(numOpacDown);
             _ = opacity == 100 ? DisableOpacityButton(numOpacUp) : EnableOpacityButton(numOpacUp);
@@ -764,7 +764,7 @@ namespace TaskbarGroupsEx
 
         private void pnlArgumentTextbox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Category.ShortcutList[selectedShortcut.Position].Arguments = pnlArgumentTextbox.Text;
+            fgConfig.ShortcutList[selectedShortcut.Position].Arguments = pnlArgumentTextbox.Text;
         }
 
         private void pnlArgumentTextbox_KeyDown(object sender, KeyEventArgs e)
@@ -779,7 +779,7 @@ namespace TaskbarGroupsEx
 
         private void pnlAllowOpenAll_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            Category.allowOpenAll = pnlAllowOpenAll.IsChecked == true ? true : false;
+            fgConfig.allowOpenAll = pnlAllowOpenAll.IsChecked == true ? true : false;
         }
 
         private void cmdSelectDirectory_Click(object sender, RoutedEventArgs e)
@@ -787,7 +787,7 @@ namespace TaskbarGroupsEx
             if (selectedShortcut == null)
                 return;
 
-            String? InitDir = Category.ShortcutList[selectedShortcut.Index].WorkingDirectory;
+            String? InitDir = fgConfig.ShortcutList[selectedShortcut.Index].WorkingDirectory;
             OpenFolderDialog openFileDialog = new OpenFolderDialog
             {
                 InitialDirectory = InitDir
@@ -795,7 +795,7 @@ namespace TaskbarGroupsEx
 
             if (openFileDialog.ShowDialog(this) == true)
             {
-                pnlWorkingDirectory.Text = Category.ShortcutList[selectedShortcut.Index].WorkingDirectory = openFileDialog.FolderName;
+                pnlWorkingDirectory.Text = fgConfig.ShortcutList[selectedShortcut.Index].WorkingDirectory = openFileDialog.FolderName;
             }
         }
 
@@ -804,11 +804,11 @@ namespace TaskbarGroupsEx
             if (selectedShortcut == null)
                 return;
 
-            Category.ShortcutList[selectedShortcut.Position].WorkingDirectory = pnlWorkingDirectory.Text;
+            fgConfig.ShortcutList[selectedShortcut.Position].WorkingDirectory = pnlWorkingDirectory.Text;
 
-            if (!shortcutChanged.Contains(Category.ShortcutList[selectedShortcut.Position]))
+            if (!shortcutChanged.Contains(fgConfig.ShortcutList[selectedShortcut.Position]))
             {
-                shortcutChanged.Add(Category.ShortcutList[selectedShortcut.Position]);
+                shortcutChanged.Add(fgConfig.ShortcutList[selectedShortcut.Position]);
             }
         }
 
