@@ -57,9 +57,9 @@ namespace TaskbarGroupsEx.User_Controls
             {
                 if(MotherForm != null)
                 {
-                    if (System.IO.Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.exeString)
+                    if (System.IO.Path.GetExtension(Psc.FilePath).ToLower() == ".lnk" && Psc.FilePath == MainPath.GetExecutablePath())
                     {
-                        MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, MainPath.path);
+                        MotherForm.OpenFile(Psc.Arguments, Psc.FilePath, MainPath.GetPath());
                     }
                     else
                     {

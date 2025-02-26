@@ -258,7 +258,7 @@ namespace TaskbarGroupsEx.Classes
                     savePath = iconPath + "\\" + Path.GetFileNameWithoutExtension(filePath) + ".png";
                 }
 
-                if (programShortcutControl != null)
+                if (programShortcutControl != null && programShortcutControl.logo != null)
                 {
                     ImageFunctions.SaveBitmapSourceToFile(programShortcutControl.logo, savePath);
                 }

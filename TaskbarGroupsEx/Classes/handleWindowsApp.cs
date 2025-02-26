@@ -36,8 +36,13 @@ namespace TaskbarGroupsEx.Classes
             XmlNamespaceManager appManifestNamespace = new XmlNamespaceManager(new NameTable());
             appManifestNamespace.AddNamespace("sm", "http://schemas.microsoft.com/appx/manifest/foundation/windows10");
 
-            String logoLocation = (appManifest.SelectSingleNode("/sm:Package/sm:Properties/sm:Logo", appManifestNamespace).InnerText).Replace("\\", @"\");
 
+            XmlNode? node = appManifest.SelectSingleNode("/sm:Package/sm:Properties/sm:Logo", appManifestNamespace);
+
+            String? logoLocation = null;
+            if (node != null) {
+                logoLocation = (node.InnerText).Replace("\\", @"\");
+            }
 
 
             if (logoLocation != null)
@@ -81,10 +86,8 @@ namespace TaskbarGroupsEx.Classes
             {
                 return ImageFunctions.BitmapSourceFromFile(logoPath);
             }
-            else
-            {
-                return Imaging.CreateBitmapSourceFromHIcon(Icon.ExtractAssociatedIcon(defaultFile).Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            }
+
+            return ImageFunctions.ExtractIconToBitmapSource(defaultFile);
         }
 
         public static string GetLnkTarget(string lnkPath)
@@ -137,11 +140,25 @@ namespace TaskbarGroupsEx.Classes
 
             try
             {
-                return appManifest.SelectSingleNode("/sm:Package/sm:Applications/sm:Application/uap:VisualElements", appManifestNamespace).Attributes.GetNamedItem("DisplayName").InnerText;
+                XmlNode? node = appManifest.SelectSingleNode("/sm:Package/sm:Applications/sm:Application/uap:VisualElements", appManifestNamespace);
+                if (node != null){
+                    XmlAttributeCollection? attrib = node.Attributes;
+                    if (attrib != null) {
+                        node = attrib.GetNamedItem("DisplayName");
+                        if (node != null) {
+                            return node.InnerText;
+                        }
+                    }
+                }
             } catch (Exception)
             {
-                return appManifest.SelectSingleNode("/sm:Package/sm:Properties/sm:DisplayName", appManifestNamespace).InnerText;
+                XmlNode? node = appManifest.SelectSingleNode("/sm:Package/sm:Properties/sm:DisplayName", appManifestNamespace);
+                if (node != null) {
+                    return node.InnerText;
+                }
             }
+
+            return "ERROR";
         }
     }
 }

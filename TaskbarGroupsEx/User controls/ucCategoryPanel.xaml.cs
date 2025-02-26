@@ -1,32 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using TaskbarGroupsEx;
 using TaskbarGroupsEx.Classes;
 
 namespace TaskbarGroupsEx
 {
-    /// <summary>
-    /// Interaction logic for ucCategoryPanel.xaml
-    /// </summary>
     public partial class ucCategoryPanel : UserControl
     {
         public FolderGroupConfig Category;
         public frmClient Client;
+        public Image? shortcutPanel;
+
         public ucCategoryPanel(frmClient client, FolderGroupConfig category)
         {
             InitializeComponent();
@@ -89,20 +76,5 @@ namespace TaskbarGroupsEx
             frmGroup editGroup = new frmGroup(Client, Category);
             editGroup.ShowDialog();
         }
-
-        public static Bitmap LoadBitmap(string path) // needed to access img without occupying read/write
-        {
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            using (BinaryReader reader = new BinaryReader(stream))
-            {
-                var memoryStream = new MemoryStream(reader.ReadBytes((int)stream.Length));
-                reader.Close();
-                stream.Close();
-                return new Bitmap(memoryStream);
-            }
-        }
-
-        public System.Windows.Controls.Image shortcutPanel;
-
     }
 }

@@ -21,9 +21,8 @@ namespace TaskbarGroupsEx
             System.Runtime.ProfileOptimization.StartProfile("frmClient.Profile");
             InitializeComponent();
             Reload();
-
            
-            currentVersion.Text = currentVersion.Text.Replace("{CurrentVersion}", "v" + Assembly.GetEntryAssembly().GetName().Version.ToString());
+            currentVersion.Text = currentVersion.Text.Replace("{CurrentVersion}", "v" + MainPath.GetAssemblyVersion());
 
             githubVersion.Inlines.Clear();
             githubVersion.Inlines.Add(Task.Run(() => getVersionData()).Result);

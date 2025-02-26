@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -21,7 +21,7 @@ namespace TaskbarGroupsEx
         private String[] imageExt = new String[] { ".png", ".jpg", ".jpe", ".jfif", ".jpeg", };
         private String[] extensionExt = new String[] { ".exe", ".lnk", ".url" };
         private String[] specialImageExt = new String[] { ".ico", ".exe", ".lnk" };
-        private String[] newExt;
+        private String[] newExt = new String[]{};
 
         public ucProgramShortcut? selectedShortcut = null;
 
@@ -108,8 +108,8 @@ namespace TaskbarGroupsEx
             resetSelection();
 
             lblErrorShortcut.Visibility = Visibility.Hidden; // resetting error msg
-
-            if (fgConfig.ShortcutList.Count >= 20)
+            
+            if (fgConfig != null && fgConfig.ShortcutList.Count >= 20)
             {
                 lblErrorShortcut.Text = "Max 20 shortcuts in one group";
                 //lblErrorShortcut.BringToFront();
@@ -172,6 +172,9 @@ namespace TaskbarGroupsEx
 
         private void addShortcut(String file, bool isExtension = false)
         {
+            if (fgConfig == null)
+                return;
+
             String workingDirec = getProperDirectory(file);
 
             ProgramShortcut psc = new ProgramShortcut() { FilePath = Environment.ExpandEnvironmentVariables(file), isWindowsApp = isExtension, WorkingDirectory = workingDirec }; //Create new shortcut obj
@@ -185,66 +188,15 @@ namespace TaskbarGroupsEx
         {
             resetSelection();
 
-            fgConfig.ShortcutList.Remove(psc);
+            if(fgConfig != null)
+                fgConfig.ShortcutList.Remove(psc);
+
             resetSelection();
-            //bool before = true;
-            //int i = 0;
 
             ucProgramShortcut? _ShortcutControl = FindProgramShortcutControl(psc);
             int ShortcutIndex = pnlShortcuts.Children.IndexOf(_ShortcutControl);
             pnlShortcuts.Children.Remove(_ShortcutControl);
             RefreshProgramControls();
-
-            /*
-            foreach (UIElement element in pnlShortcuts.Children)
-            {
-                ucProgramShortcut? ucPsc = element as ucProgramShortcut;
-                if(ucPsc == null)
-                {
-                    continue;
-                }
-
-                if (before)
-                {
-                    //ucPsc.Top -= 50;
-                    ucPsc.Position -= 1;
-                }
-                if (ucPsc.Shortcut == psc)
-                {
-                    //i = pnlShortcuts.Controls.IndexOf(ucPsc);
-
-                    int controlIndex = pnlShortcuts.Children.IndexOf(ucPsc);
-
-                    
-
-                    if (controlIndex + 1 != pnlShortcuts.Children.Count)
-                    {
-                        try
-                        {
-                            pnlScrollViewer.ScrollToHorizontalOffset(ucPsc.Height * controlIndex);
-                            //pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[controlIndex]);
-                        }
-                        catch
-                        {
-                            if (pnlShortcuts.Children.Count != 0)
-                            {
-                                pnlScrollViewer.ScrollToHorizontalOffset(ucPsc.Height * (controlIndex-1));
-                                //pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[controlIndex - 1]);
-                            }
-                        }
-                    }
-
-                    before = false;
-                }
-            }
-
-            /*
-            if (pnlShortcuts.Controls.Count < 5)
-            {
-                pnlShortcuts.Height -= 50;
-                pnlAddShortcut.Top -= 50;
-            }
-            */
         }
 
         // Change positions of shortcut panels
@@ -353,9 +305,12 @@ namespace TaskbarGroupsEx
 
         public static String handleExtName(String file)
         {
+            if (file == null)
+                return "Error";
+
             string fileName = System.IO.Path.GetFileName(file);
-            file = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file));
-            Shell32.Folder shellFolder = shell.NameSpace(file);
+            string? filepath = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file));
+            Shell32.Folder shellFolder = shell.NameSpace(filepath);
             Shell32.FolderItem shellItem = shellFolder.Items().Item(fileName);
 
             return shellItem.Name;
@@ -432,6 +387,9 @@ namespace TaskbarGroupsEx
 
         private void cmdSave_Click(object sender, RoutedEventArgs e)
         {
+            if (fgConfig == null)
+                return;
+
             resetSelection();
 
             //List <Directory> directories = 
@@ -507,7 +465,12 @@ namespace TaskbarGroupsEx
                     // Normalize string so it can be used in path; remove spaces
                     fgConfig.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
 
-                    fgConfig.CreateConfig(cmdAddGroupIcon.Source as BitmapSource); // Creating group config files
+                    BitmapSource? groupImage = cmdAddGroupIcon.Source as BitmapSource;
+                    if(groupImage == null)
+                    {
+                        groupImage = ImageFunctions.GetErrorImage();
+                    }
+                    fgConfig.CreateConfig(groupImage); // Creating group config files
                     Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
 
                     Close();
@@ -605,6 +568,9 @@ namespace TaskbarGroupsEx
         // Color radio buttons
         private void radioCustom_Click(object sender, RoutedEventArgs e)
         {
+            if (fgConfig == null)
+                return;
+
             frmColorPicker _colorPicker = new frmColorPicker(pnlCustomColor, fgConfig.CatagoryBGColor);
             if (_colorPicker.ShowDialog() == true)
             {
@@ -738,7 +704,6 @@ namespace TaskbarGroupsEx
                 pnlColor.Visibility = Visibility.Visible;
                 pnlArguments.Visibility = Visibility.Hidden;
                 selectedShortcut.ucDeselected();
-                selectedShortcut.IsSelected = false;
                 selectedShortcut = null;
             }
         }
@@ -749,22 +714,26 @@ namespace TaskbarGroupsEx
         {
             selectedShortcut = passedShortcut;
             passedShortcut.ucSelected();
-            passedShortcut.IsSelected = true;
 
-            pnlArgumentTextbox.Text = passedShortcut.Shortcut.Arguments;
-            pnlArgumentTextbox.IsEnabled = true;
+            ProgramShortcut? pShortcut = passedShortcut.Shortcut;
+            if (pShortcut != null)
+            {
+                pnlArgumentTextbox.Text = pShortcut.Arguments;
+                pnlArgumentTextbox.IsEnabled = true;
 
-            pnlWorkingDirectory.Text = passedShortcut.Shortcut.WorkingDirectory;
-            pnlWorkingDirectory.IsEnabled = true;
-            cmdSelectDirectory.IsEnabled = true;
+                pnlWorkingDirectory.Text = pShortcut.WorkingDirectory;
+                pnlWorkingDirectory.IsEnabled = true;
+                cmdSelectDirectory.IsEnabled = true;
 
-            pnlColor.Visibility = Visibility.Hidden;
-            pnlArguments.Visibility = Visibility.Visible;
+                pnlColor.Visibility = Visibility.Hidden;
+                pnlArguments.Visibility = Visibility.Visible;
+            }
         }
 
         private void pnlArgumentTextbox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            fgConfig.ShortcutList[selectedShortcut.Position].Arguments = pnlArgumentTextbox.Text;
+            if(fgConfig != null && selectedShortcut != null)
+                fgConfig.ShortcutList[selectedShortcut.Position].Arguments = pnlArgumentTextbox.Text;
         }
 
         private void pnlArgumentTextbox_KeyDown(object sender, KeyEventArgs e)
@@ -779,12 +748,13 @@ namespace TaskbarGroupsEx
 
         private void pnlAllowOpenAll_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            fgConfig.allowOpenAll = pnlAllowOpenAll.IsChecked == true ? true : false;
+            if(fgConfig != null)
+                fgConfig.allowOpenAll = pnlAllowOpenAll.IsChecked == true ? true : false;
         }
 
         private void cmdSelectDirectory_Click(object sender, RoutedEventArgs e)
         {
-            if (selectedShortcut == null)
+            if (selectedShortcut == null || fgConfig == null)
                 return;
 
             String? InitDir = fgConfig.ShortcutList[selectedShortcut.Index].WorkingDirectory;
@@ -801,7 +771,7 @@ namespace TaskbarGroupsEx
 
         private void pnlWorkingDirectory_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (selectedShortcut == null)
+            if (selectedShortcut == null || fgConfig == null)
                 return;
 
             fgConfig.ShortcutList[selectedShortcut.Position].WorkingDirectory = pnlWorkingDirectory.Text;
@@ -816,21 +786,25 @@ namespace TaskbarGroupsEx
         {
             try
             {
+                string? dirName = null;
                 if (System.IO.Path.GetExtension(file).ToLower() == ".lnk")
                 {
                     IWshShortcut extension = (IWshShortcut)new WshShell().CreateShortcut(file);
-
-                    return System.IO.Path.GetDirectoryName(extension.TargetPath);
+                    dirName = System.IO.Path.GetDirectoryName(extension.TargetPath);
                 }
                 else
                 {
-                    return System.IO.Path.GetDirectoryName(file);
+                    dirName = System.IO.Path.GetDirectoryName(file);
+                }
+
+                if (dirName != null)
+                {
+                    return dirName;
                 }
             }
-            catch (Exception)
-            {
-                return MainPath.exeString;
-            }
+            catch{ }
+
+            return MainPath.GetExecutablePath();
         }
 
         private void frmGroup_MouseClick(object sender, MouseButtonEventArgs e)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.DirectoryServices.ActiveDirectory;
@@ -47,8 +47,6 @@ namespace TaskbarGroupsEx.Forms
         private string mShortcutName;
         private string mPath;
         public System.Windows.Point mouseClick;
-        public Panel shortcutPanel;
-
 
 
         public double Right
@@ -111,7 +109,7 @@ namespace TaskbarGroupsEx.Forms
             IUIAutomationElement windowElement = pUIAutomation.ElementFromHandle(hWndMSTaskListWClass);
             if (windowElement != null)
             {
-                IUIAutomationElementArray elementArray = null;
+                IUIAutomationElementArray? elementArray = null;
                 IUIAutomationCondition condition = pUIAutomation.CreateTrueCondition();
                 elementArray = windowElement.FindAll(Interop.UIAutomationClient.TreeScope.TreeScope_Descendants | Interop.UIAutomationClient.TreeScope.TreeScope_Children, condition);
                 if (elementArray != null)
@@ -315,8 +313,9 @@ namespace TaskbarGroupsEx.Forms
         // Loading category and building shortcuts
         private void LoadCategory()
         {
-            // Check if icon caches exist for the category being loaded
-            // If not then rebuild the icon cache
+            if (fgConfig == null)
+                return;
+
             if (!Directory.Exists(@MainPath.Config + fgConfig.GetName() + @"\Icons\"))
             {
                 fgConfig.cacheIcons();
@@ -385,13 +384,11 @@ namespace TaskbarGroupsEx.Forms
 
         private void frmMain_KeyUp(object sender, KeyEventArgs e)
         {
-            //System.Diagnostics.Debugger.Launch();
-            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Key == Key.Enter && fgConfig.allowOpenAll)
+            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Key == Key.Enter && fgConfig != null && fgConfig.allowOpenAll)
             {
                 foreach (ucShortcut usc in this.ControlList)
                     usc.ucShortcut_OnClick();
             }
-
 
             try
             {
@@ -404,16 +401,11 @@ namespace TaskbarGroupsEx.Forms
             }              
             catch{}
         }
-        //
-        // endregion
-        //
 
         private void Window_Activated(object sender, EventArgs e)
         {
             this.Visibility = Visibility.Visible;
             NativeMethods.GlobalActivate(this);
-            //this.Show();
-            //this.WindowState = WindowState.Normal;
         }
 
         //

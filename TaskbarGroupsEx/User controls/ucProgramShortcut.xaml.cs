@@ -24,14 +24,12 @@ namespace TaskbarGroupsEx
     /// </summary>
     public partial class ucProgramShortcut : UserControl
     {
-        public ProgramShortcut Shortcut { get; set; }
-        public frmGroup MotherForm { get; set; }
-
-        public bool IsSelected = false;
+        public ProgramShortcut? Shortcut { get; set; }
+        public frmGroup? MotherForm { get; set; }
         public int Position { get; set; }
         public int Index = -1;
 
-        public BitmapSource logo;
+        public BitmapSource? logo;
         public ucProgramShortcut()
         {
             InitializeComponent();
@@ -39,7 +37,8 @@ namespace TaskbarGroupsEx
 
         private void ucProgramShortcut_Loaded(object sender, RoutedEventArgs e)
         {
-            // Grab the file name without the extension to be used later as the naming scheme for the icon .jpg image
+            if (Shortcut == null)
+                return;
 
             if (Shortcut.isWindowsApp)
             {
@@ -95,20 +94,6 @@ namespace TaskbarGroupsEx
                 logo = (BitmapImage)Application.Current.Resources["ErrorIcon"];
                 picShortcut.Source = logo;
             }
-
-            /*
-            if (Position == 0)
-            {
-                cmdNumUp.IsEnabled = false;
-                cmdNumUp.Foreground  = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 23, 23, 23));
-            }
-            if (Position == MotherForm.Category.ShortcutList.Count - 1)
-            {
-                cmdNumDown.IsEnabled = false;
-                cmdNumUp.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 23, 23, 23));
-
-            }
-            */
         }
 
         private void ucProgramShortcut_MouseEnter(object sender, MouseEventArgs e)
@@ -118,7 +103,7 @@ namespace TaskbarGroupsEx
 
         private void ucProgramShortcut_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (MotherForm.selectedShortcut != this)
+            if (MotherForm != null && MotherForm.selectedShortcut != this)
             {
                 ucDeselected();
             }
@@ -127,41 +112,44 @@ namespace TaskbarGroupsEx
         private void cmdNumUp_Click(object sender, RoutedEventArgs e)
         {
             cmdNumUp.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
-            MotherForm.RepositionControl(this, -1);
+            if(MotherForm != null)
+                MotherForm.RepositionControl(this, -1);
             e.Handled = true;
         }
 
         private void cmdNumDown_Click(object sender, RoutedEventArgs e)
         {
             cmdNumDown.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
-            MotherForm.RepositionControl(this, 1);
+            if(MotherForm != null)
+                MotherForm.RepositionControl(this, 1);
             e.Handled = true;
         }
 
         private void cmdDelete_Click(object sender, RoutedEventArgs e)
         {
-            MotherForm.DeleteShortcut(Shortcut);
+            if(MotherForm != null && Shortcut != null)
+                MotherForm.DeleteShortcut(Shortcut);
         }
 
         // Handle what is selected/deselected when a shortcut is clicked on
         // If current item is already selected, then deselect everything
         private void ucProgramShortcut_Click(object sender, MouseButtonEventArgs e)
         {
-            if (MotherForm.selectedShortcut == this)
+            if (MotherForm != null)
             {
-                MotherForm.resetSelection();
-                //IsSelected = false;
-            }
-            else
-            {
-                if (MotherForm.selectedShortcut != null)
+                if (MotherForm.selectedShortcut == this)
                 {
                     MotherForm.resetSelection();
-                    //IsSelected = false;
                 }
+                else
+                {
+                    if (MotherForm.selectedShortcut != null)
+                    {
+                        MotherForm.resetSelection();
+                    }
 
-                MotherForm.enableSelection(this);
-               //IsSelected = true;
+                    MotherForm.enableSelection(this);
+                }
             }
         }
 
@@ -200,34 +188,23 @@ namespace TaskbarGroupsEx
         private void txtShortcutName_GotFocus(object sender, RoutedEventArgs e)
         {
             txtShortcutName.BorderThickness = new Thickness(1.0);
-
-            if (MotherForm.selectedShortcut == this)
+            if (MotherForm != null)
             {
-                MotherForm.resetSelection();
-                //IsSelected = false;
-            }
-            else
-            {
-                if (MotherForm.selectedShortcut != null)
+                if (MotherForm.selectedShortcut == this)
                 {
                     MotherForm.resetSelection();
-                    //IsSelected = false;
                 }
+                else
+                {
+                    if (MotherForm.selectedShortcut != null)
+                    {
+                        MotherForm.resetSelection();
+                    }
 
-                MotherForm.enableSelection(this);
-                // IsSelected = true;
+                    MotherForm.enableSelection(this);
+                }
             }
-        }
-
-        private void ucProgramShortcut_Enter(object sender, RoutedEventArgs e)
-        {
-            //IsSelected = true;
-        }
-
-        private void ucProgramShortcut_Leave(object sender, RoutedEventArgs e)
-        {
-            //IsSelected = false;
-        }        
+        }  
 
         private void txtShortcutName_LostFocus(object sender, RoutedEventArgs e)
         {

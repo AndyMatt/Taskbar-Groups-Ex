@@ -45,7 +45,7 @@ namespace TaskbarGroupsEx
             {
                 StartInfo =
                 {
-                    FileName = MainPath.exeString,
+                    FileName = MainPath.GetExecutablePath(),
                     Verb = "runas",
                     Arguments = String.Join(" ", arguments.Skip(1)),
                     UseShellExecute=true
@@ -61,11 +61,11 @@ namespace TaskbarGroupsEx
         [STAThread]
         public void EntryPoint(object sender, StartupEventArgs e)
         {
-            ProfileOptimization.SetProfileRoot(MainPath.path + "\\JITComp");
+            ProfileOptimization.SetProfileRoot(MainPath.GetJitPath());
 
             WaitForDebugger();
 
-            if(MainPath.path != null && !CheckWriteAccessToDirectory(MainPath.path))
+            if(!CheckWriteAccessToDirectory(MainPath.GetPath()))
             {
                 RelauchAsAdmin();
             }
