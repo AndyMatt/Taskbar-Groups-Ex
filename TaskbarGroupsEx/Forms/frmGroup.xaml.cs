@@ -85,6 +85,12 @@ namespace TaskbarGroupsEx
             }
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            NativeMethods.WindowsUXHelper.ApplyWindowsImmersion(this);
+        }
+
         //--------------------------------------
         // SHORTCUT PANEL HANLDERS
         //--------------------------------------

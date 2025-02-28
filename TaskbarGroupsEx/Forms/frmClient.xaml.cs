@@ -25,6 +25,12 @@ namespace TaskbarGroupsEx
             githubVersion.Inlines.Clear();
             githubVersion.Inlines.Add(Task.Run(() => getVersionData()).Result);
         }
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            NativeMethods.WindowsUXHelper.ApplyWindowsImmersion(this);
+        }
+
         public void Reload()
         {
             pnlExistingGroups.Children.Clear();

@@ -59,6 +59,12 @@ namespace TaskbarGroupsEx.Forms
             }
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            NativeMethods.WindowsUXHelper.ApplyWindowsImmersion(this);
+        }
+
         private void frmMain_Load(object sender, RoutedEventArgs e)
         {
             LoadCategory();

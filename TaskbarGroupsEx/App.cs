@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime;
 using System.Windows;
@@ -62,6 +62,7 @@ namespace TaskbarGroupsEx
         public void EntryPoint(object sender, StartupEventArgs e)
         {
             ProfileOptimization.SetProfileRoot(MainPath.GetJitPath());
+            NativeMethods.WindowsUXHelper.SetWindowsUXTheme();
 
             WaitForDebugger();
 
