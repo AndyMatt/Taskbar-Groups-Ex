@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,8 +21,7 @@ namespace TaskbarGroupsEx.User_Controls
         {
             if (ThisCategory != null && Psc != null)
             {
-                picIcon.Source = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
-                picBG.Source = ThisCategory.loadImageCache(Psc);
+                selectionCursor.Source = picIcon.Source = ThisCategory.loadImageCache(Psc); // Use the local icon cache for the file specified as the icon image
             }
         }
 
@@ -64,7 +63,7 @@ namespace TaskbarGroupsEx.User_Controls
 
         public void ucShortcut_OnMouseEnter()
         {
-            picBG.Visibility = Visibility.Visible;
+            selectionCursor.Visibility = Visibility.Visible;
         }
 
         private void ucShortcut_MouseLeave(object sender, MouseEventArgs e)
@@ -74,7 +73,7 @@ namespace TaskbarGroupsEx.User_Controls
 
         public void ucShortcut_OnMouseLeave()
         {
-            picBG.Visibility = Visibility.Hidden;
+            selectionCursor.Visibility = Visibility.Hidden;
         }
     }
 }
