@@ -26,8 +26,6 @@ namespace TaskbarGroupsEx.Forms
 
         private string mShortcutName;
         private string mPath;
-        public System.Windows.Point mouseClick;
-
 
         public double Right
         {
@@ -46,7 +44,6 @@ namespace TaskbarGroupsEx.Forms
 
             mShortcutName = ShortcutName;
             mPath = MainPath.Config + mShortcutName;
-            mouseClick = new System.Windows.Point(0, 0);
             this.WindowStyle = WindowStyle.None;
 
 
@@ -112,9 +109,9 @@ namespace TaskbarGroupsEx.Forms
             }
 
             //Fallback to Mice
-            NativeMethods.Win32Point mousePos = NativeMethods.GetMousePosition();
-
-            this.Left = mousePos.X; this.Top = mousePos.Y;
+            Point mousePos = NativeMethods.GetMousePosition();
+            this.Left = mousePos.X; 
+            this.Top = mousePos.Y;
         }
         //
         //------------------------------------------------------------------------------------
