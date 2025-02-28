@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Text.RegularExpressions;
+using System.IO;
 using System.Windows.Media;
 
 namespace TaskbarGroupsEx.Classes

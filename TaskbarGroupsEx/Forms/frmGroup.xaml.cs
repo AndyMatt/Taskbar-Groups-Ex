@@ -1,15 +1,14 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.IO;
-using TaskbarGroupsEx.Classes;
-using System.Text.RegularExpressions;
-using System.Windows.Media;
 using Microsoft.Win32;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Transactions;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using TaskbarGroupsEx.Classes;
 using IWshRuntimeLibrary;
-using System.Windows.Navigation;
 
 namespace TaskbarGroupsEx
 {

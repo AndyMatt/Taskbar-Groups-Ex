@@ -1,15 +1,7 @@
-﻿using System;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Xml;
-using System.Collections.Generic;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Xml;
 using Windows.Management.Deployment;
-using System.Windows.Documents;
 
 namespace TaskbarGroupsEx.Classes
 {

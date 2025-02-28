@@ -1,31 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xml.Linq;
 using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.User_Controls;
-using Windows.Storage.Search;
-using WpfScreenHelper;
-using System.Runtime.InteropServices;
-using System.Windows.Automation;
 using Interop.UIAutomationClient;
-using System.Text.RegularExpressions;
-
 
 namespace TaskbarGroupsEx.Forms
 {
