@@ -1,16 +1,33 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
-    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
     <PublishReadyToRun>true</PublishReadyToRun>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <ErrorReport>none</ErrorReport>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebugType>full</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebugType>none</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,8 +53,6 @@
     <PackageReference Include="Interop.IWshRuntimeLibrary" Version="1.0.1" />
     <PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
     <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.1" />
-    <PackageReference Include="System.Management" Version="9.0.1" />
-    <PackageReference Include="WpfScreenHelper" Version="2.1.1" />
   </ItemGroup>
 
   <ItemGroup>
