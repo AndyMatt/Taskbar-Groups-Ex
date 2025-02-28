@@ -1,3 +1,4 @@
+using Interop.UIAutomationClient;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -5,7 +6,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.User_Controls;
-using Interop.UIAutomationClient;
 
 namespace TaskbarGroupsEx.Forms
 {
@@ -14,12 +14,6 @@ namespace TaskbarGroupsEx.Forms
     /// </summary>
     public partial class frmMain : Window
     {
-        [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
-
-        [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
-
         public FolderGroupConfig? fgConfig;
         public List<ucShortcut> ControlList = new List<ucShortcut>();
         public System.Windows.Media.Color HoverColor;
@@ -73,11 +67,11 @@ namespace TaskbarGroupsEx.Forms
 
         private void SetLocation()
         {
-            IntPtr hWndTray = FindWindow("Shell_TrayWnd", null);
+            IntPtr hWndTray = NativeMethods.FindWindow("Shell_TrayWnd", null);
 
-            IntPtr hWndRebar = FindWindowEx(hWndTray, IntPtr.Zero, "ReBarWindow32", null);
-            IntPtr hWndMSTaskSwWClass = FindWindowEx(hWndRebar, IntPtr.Zero, "MSTaskSwWClass", null);
-            IntPtr hWndMSTaskListWClass = FindWindowEx(hWndMSTaskSwWClass, IntPtr.Zero, "MSTaskListWClass", null);
+            IntPtr hWndRebar = NativeMethods.FindWindowEx(hWndTray, IntPtr.Zero, "ReBarWindow32", null);
+            IntPtr hWndMSTaskSwWClass = NativeMethods.FindWindowEx(hWndRebar, IntPtr.Zero, "MSTaskSwWClass", null);
+            IntPtr hWndMSTaskListWClass = NativeMethods.FindWindowEx(hWndMSTaskSwWClass, IntPtr.Zero, "MSTaskListWClass", null);
 
             IUIAutomation pUIAutomation = new CUIAutomation();
 
