@@ -38,6 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\defaultIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="Shell32">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>0</VersionMinor>
@@ -64,6 +68,7 @@
   <ItemGroup>
     <Resource Include="Resources\AddIconGray.png" />
     <Resource Include="Resources\AddIconWhite.png" />
+    <Resource Include="Resources\defaultIcon.png" />
     <Resource Include="Resources\Error.png" />
     <Resource Include="Resources\Icon.ico" />
   </ItemGroup>

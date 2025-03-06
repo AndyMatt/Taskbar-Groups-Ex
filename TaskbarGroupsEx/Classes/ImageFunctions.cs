@@ -38,6 +38,11 @@ namespace TaskbarGroupsEx.Classes
             return errorImage;
         }
 
+        public static BitmapSource GetDefaultShortcutIcon()
+        {
+            return new BitmapImage(new Uri("/Resources/DefaultIcon.png", UriKind.Relative));
+        }
+
         public static BitmapSource ResizeImage(BitmapSource image, double width, double height, bool Padding = false)
         {
                 double MinScale = Math.Min(width / image.Width, height / image.Height);
@@ -278,7 +283,7 @@ namespace TaskbarGroupsEx.Classes
                 }
             }
 
-            return GetBlankImage();
+            return GetDefaultShortcutIcon();
         }
 
         public static async Task<BitmapSource>GetFaviconFromURL(string url)

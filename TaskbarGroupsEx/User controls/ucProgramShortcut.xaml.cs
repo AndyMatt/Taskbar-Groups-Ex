@@ -66,7 +66,7 @@ namespace TaskbarGroupsEx
             }
 
             if (logo == null)
-                logo = ImageFunctions.GetBlankImage();
+                logo = ImageFunctions.GetDefaultShortcutIcon();
 
             picShortcut.Source = logo;
         }
