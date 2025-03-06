@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.IO;
+using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -17,6 +19,19 @@ namespace TaskbarGroupsEx.Classes
                 Bitmap errorBitmap = new Bitmap(32, 32);
                 Graphics flagGraphics = Graphics.FromImage(errorBitmap);
                 flagGraphics.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 32, 32);
+                errorImage = Bitmap2BitmapSource(errorBitmap);
+            }
+
+            return errorImage;
+        }
+
+        public static BitmapSource GetBlankImage()
+        {
+            if (errorImage == null)
+            {
+                Bitmap errorBitmap = new Bitmap(32, 32);
+                Graphics flagGraphics = Graphics.FromImage(errorBitmap);
+                flagGraphics.FillRectangle(System.Drawing.Brushes.Transparent, 0, 0, 32, 32);
                 errorImage = Bitmap2BitmapSource(errorBitmap);
             }
 
@@ -148,6 +163,20 @@ namespace TaskbarGroupsEx.Classes
             return GetErrorImage();
         }
 
+        public static BitmapSource ExtractIconToBitmapSource(string filePath, int index)
+        {
+            if (filePath != null)
+            {
+                Icon? ico = Icon.ExtractIcon(filePath, index, 32);
+                if (ico != null)
+                {
+                    return Imaging.CreateBitmapSourceFromHIcon(ico.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+            
+            return GetErrorImage();
+        }
+
         public static BitmapSource IconPathToBitmapSource(string filePath)
         {
             Icon? _icon = Icon.ExtractAssociatedIcon(filePath);
@@ -178,6 +207,106 @@ namespace TaskbarGroupsEx.Classes
         {
             var img = new System.Windows.Media.Imaging.BitmapImage(new Uri(filePath));
             return img;
+        }
+
+        //Struct used by SHGetFileInfo function
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        };
+
+        //Constants flags for SHGetFileInfo 
+        public const uint SHGFI_ICON = 0x100;
+        public const uint SHGFI_LARGEICON = 0x0; // 'Large icon
+
+        //Import SHGetFileInfo function
+        [DllImport("shell32.dll")]
+        public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
+
+        public static BitmapSource GetFolderIcon(string Path)
+        {
+            SHFILEINFO shinfo = new SHFILEINFO();
+
+            //Call function with the path to the folder you want the icon for
+            SHGetFileInfo(
+                Path,
+                0, ref shinfo, (uint)Marshal.SizeOf(shinfo),
+                SHGFI_ICON | SHGFI_LARGEICON);
+
+
+
+            using (Icon i = System.Drawing.Icon.FromHandle(shinfo.hIcon))
+            {
+                //Convert icon to a Bitmap source
+                BitmapSource img = Imaging.CreateBitmapSourceFromHIcon(
+                                        i.Handle,
+                                        new Int32Rect(0, 0, i.Width, i.Height),
+                                        BitmapSizeOptions.FromEmptyOptions());
+
+                //WPF Image control
+                return img;
+            }
+        }
+
+        public static BitmapSource GetShortcutIcon(string iconPath)
+        {
+            if (System.IO.File.Exists(iconPath))
+            {
+                try
+                {
+                    using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(iconPath)))
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.StreamSource = ms;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        bitmap.Freeze();
+                        return bitmap;
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+            }
+
+            return GetBlankImage();
+        }
+
+        public static async Task<BitmapSource>GetFaviconFromURL(string url)
+        {
+            try
+            {
+                Uri favIconURI = new Uri(@"https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=" + url + "&size=48");
+                var client = new HttpClient();
+                var response = client.GetByteArrayAsync(favIconURI);
+                response.Wait();
+
+                using (MemoryStream ms = new MemoryStream(response.Result))
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = ms;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            return (BitmapSource)Application.Current.Resources["ErrorIcon"];
         }
         //
         // END OF CLASS

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,17 +45,7 @@ namespace TaskbarGroupsEx
             this.shortcutPanel.MouseEnter += new MouseEventHandler((sender, e) => Client.EnterControl(sender, e, this));
             this.shortcutPanel.MouseLeave += new MouseEventHandler((sender, e) => Client.LeaveControl(sender, e, this));
             this.shortcutPanel.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) => OpenFolder(sender, e));
-
-            // Check if file is stil existing and if so render it
-            if (File.Exists(programShortcut.FilePath) || Directory.Exists(programShortcut.FilePath) || programShortcut.isWindowsApp)
-            {
-                this.shortcutPanel.Source = Category.loadImageCache(programShortcut);
-            }
-            else // if file does not exist
-            {
-                this.shortcutPanel.Source = (BitmapImage)Application.Current.Resources["ErrorIcon"];
-                this.shortcutPanel.ToolTip = "Program does not exist";
-            }
+            this.shortcutPanel.Source = Category.loadImageCache(programShortcut);
 
             this.pnlShortcutIcons.Children.Add(this.shortcutPanel);
         }

@@ -120,10 +120,15 @@ namespace TaskbarGroupsEx.Classes
             String subAppName = AppName.Split('!')[0];
             String appPath = findWindowsAppsFolder(subAppName);
 
-            
+            IEnumerable<Windows.ApplicationModel.Package> packages = pkgManger.FindPackagesForUser("", subAppName);
 
-                // Load and read manifest to get the logo path
-                XmlDocument appManifest = new XmlDocument();
+            if(packages != null && packages.Count() > 0)
+            {
+                return packages.First().DisplayName;
+            }
+
+            // Load and read manifest to get the logo path
+            XmlDocument appManifest = new XmlDocument();
             appManifest.Load(appPath + "\\AppxManifest.xml");
 
             XmlNamespaceManager appManifestNamespace = new XmlNamespaceManager(new NameTable());
@@ -151,6 +156,19 @@ namespace TaskbarGroupsEx.Classes
             }
 
             return "ERROR";
+        }
+
+        public static bool DoesAppExist(string uuid)
+        {
+            String subAppName = uuid.Split('!')[0];
+
+            IEnumerable<Windows.ApplicationModel.Package> packages = pkgManger.FindPackagesForUser("", subAppName);
+
+            if (packages != null && packages.Count() > 0)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

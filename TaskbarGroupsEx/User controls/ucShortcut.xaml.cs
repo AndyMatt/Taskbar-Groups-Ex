@@ -35,8 +35,7 @@ namespace TaskbarGroupsEx.User_Controls
             if (Psc == null)
                 return;
 
-            if(Psc.isWindowsApp)
-            {
+            if(Psc.type == ShortcutType.UWP) {
                 Process p = new Process() { StartInfo = new ProcessStartInfo() { UseShellExecute = true, FileName = $@"shell:appsFolder\{Psc.FilePath}" } };
                 p.Start();
             }

@@ -37,6 +37,20 @@ namespace TaskbarGroupsEx.Classes
                         newFormatCategory.CollumnCount = oldConfig.Width;
                         newFormatCategory.allowOpenAll = oldConfig.allowOpenAll;  
                         newFormatCategory.CatagoryBGColor = ConvertColorStringToBGColor(oldConfig);
+
+                        foreach(ProgramShortcut shortcut in newFormatCategory.ShortcutList)
+                        {
+                            string IconPath = MainPath.GetConfigPath() + oldConfig.Name + "\\Icons\\" + Path.GetFileNameWithoutExtension(shortcut.FilePath);
+                            if (File.Exists(IconPath + ".png"))
+                            {
+                                shortcut.IconPath = Path.GetRelativePath(MainPath.GetConfigPath(), IconPath + ".png");
+                            }
+                            else if (File.Exists(IconPath + "_FolderObjTSKGRoup.png"))
+                            {
+                                shortcut.IconPath = Path.GetRelativePath(MainPath.GetConfigPath(), IconPath + "_FolderObjTSKGRoup.png");
+                            }
+                        }
+                 
                         bSuccess = true;
                     } 
                 }

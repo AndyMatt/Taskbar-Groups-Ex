@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Transactions;
 using System.Windows;
@@ -151,41 +152,82 @@ namespace TaskbarGroupsEx
             }
             RefreshProgramControls();
         }
+
         private void pnlDragDropExt(object sender, DragEventArgs e)
         {
-            String[]? files = (String[])e.Data.GetData(DataFormats.FileDrop);
-
-            if (files != null)
+            string[] files = GetFilePathFromDropData(e.Data);
+            foreach (string file in files)
             {
-                foreach (var file in files)
+                if (file != null && file != "")
                 {
-                    if (System.IO.File.Exists(file) || Directory.Exists(file))
-                    {
-                        bool isExtension = !extensionExt.Contains(System.IO.Path.GetExtension(file));
-                        addShortcut(file, isExtension);
-                    }
+                    addShortcut(file);                    
                 }
             }
-
             if (pnlShortcuts.Children.Count != 0)
             {
                 pnlScrollViewer.ScrollToBottom();
             }
 
             resetSelection();
+
         }
 
-        private void addShortcut(String file, bool isExtension = false)
+        private string[] GetFilePathFromDropData(IDataObject dropData)
+        {
+            string[] formats = dropData.GetFormats();
+            List<string> outFiles = new List<string>();
+
+            if (dropData.GetDataPresent(DataFormats.FileDrop))
+            {
+                try
+                {
+                    var filedrop = dropData.GetData(DataFormats.FileDrop);
+                    String[]? files = (String[])filedrop;
+
+                    foreach (var file in files)
+                    {
+                        outFiles.Add(file);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    MessageBox.Show(exception.Message);
+                }
+            }
+            else if (dropData.GetDataPresent("Shell IDList Array"))
+            {
+                outFiles.Add(ShellLink.GetUWPURI(dropData));
+            }
+            else if (dropData.GetDataPresent("text/x-moz-url"))    //Chrome, Firefox
+            {
+                MemoryStream data = (MemoryStream)dropData.GetData("text/x-moz-url");
+                string dataStr = Encoding.Unicode.GetString(data.ToArray());
+                outFiles.Add("url:" + dataStr);
+            }
+
+            for(int i = 0; i < outFiles.Count; i++)
+            {
+                outFiles[i] = MainPath.ParseGuidInPath(outFiles[i]);
+            }
+
+            return outFiles.ToArray();
+        }
+
+        private bool addShortcut(String file)
         {
             if (fgConfig == null)
-                return;
+                return false;
 
-            String workingDirec = getProperDirectory(file);
+            ProgramShortcut? psc = ProgramShortcut.CreateShortcut(file);
+            if(psc != null)
+            {
+                fgConfig.ShortcutList.Add(psc);
+                LoadShortcut(psc, fgConfig.ShortcutList.Count - 1);
+                RefreshProgramControls();
+                return true;
+            }
 
-            ProgramShortcut psc = new ProgramShortcut() { FilePath = Environment.ExpandEnvironmentVariables(file), isWindowsApp = isExtension, WorkingDirectory = workingDirec }; //Create new shortcut obj
-            fgConfig.ShortcutList.Add(psc); // Add to panel shortcut list
-            LoadShortcut(psc, fgConfig.ShortcutList.Count - 1);
-            RefreshProgramControls();
+            return false;
         }
 
         // Delete shortcut
@@ -347,16 +389,26 @@ namespace TaskbarGroupsEx
         // Series of checks to make sure it can be dropped
         private Boolean checkExtensions(DragEventArgs e, String[] exts)
         {
-
-            // Make sure the file can be dragged dropped
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
-
-            if (e.Data.GetDataPresent("Shell IDList Array"))
+            if(e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                e.Effects = e.AllowedEffects;
+                e.Effects = DragDropEffects.All;
                 return true;
             }
-
+            else if(e.Data.GetDataPresent("Shell IDList Array"))
+            {
+                if (ShellLink.IsValidUWPDrop(e.Data))
+                {
+                    e.Effects = DragDropEffects.All;
+                    return true;
+                }
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+                return false;
+            }
+            // Make sure the file can be dragged dropped
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
 
             // Get the list of files of the files dropped
             String[] files = (String[])e.Data.GetData(DataFormats.FileDrop);
@@ -434,7 +486,7 @@ namespace TaskbarGroupsEx
                     {
                         if (!Directory.Exists(shortcutModifiedItem.WorkingDirectory))
                         {
-                            shortcutModifiedItem.WorkingDirectory = getProperDirectory(shortcutModifiedItem.FilePath);
+                            shortcutModifiedItem.UpdateWorkingDirectory(shortcutModifiedItem.FilePath);
                         }
                     }
 
@@ -787,31 +839,6 @@ namespace TaskbarGroupsEx
             }
         }
 
-        private String getProperDirectory(String file)
-        {
-            try
-            {
-                string? dirName = null;
-                if (System.IO.Path.GetExtension(file).ToLower() == ".lnk")
-                {
-                    IWshShortcut extension = (IWshShortcut)new WshShell().CreateShortcut(file);
-                    dirName = System.IO.Path.GetDirectoryName(extension.TargetPath);
-                }
-                else
-                {
-                    dirName = System.IO.Path.GetDirectoryName(file);
-                }
-
-                if (dirName != null)
-                {
-                    return dirName;
-                }
-            }
-            catch{ }
-
-            return MainPath.GetExecutablePath();
-        }
-
         private void frmGroup_MouseClick(object sender, MouseButtonEventArgs e)
         {
             resetSelection();
@@ -861,6 +888,11 @@ namespace TaskbarGroupsEx
                 }
 
             }
+        }
+
+        public string GetGroupName()
+        {
+            return txtGroupName.Text;
         }
     }
 }

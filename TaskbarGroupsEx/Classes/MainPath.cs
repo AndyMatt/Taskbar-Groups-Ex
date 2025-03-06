@@ -1,5 +1,8 @@
+using IWshRuntimeLibrary;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace TaskbarGroupsEx.Classes
 {
@@ -47,6 +50,11 @@ namespace TaskbarGroupsEx.Classes
             return JITComp != null ? JITComp : "";
         }
 
+        public static string GetConfigPath()
+        {
+            return Config != null ? Config : "";
+        }
+
         public static string GetAssemblyVersion()
         {
             Assembly? _assembly = Assembly.GetEntryAssembly();
@@ -64,5 +72,64 @@ namespace TaskbarGroupsEx.Classes
 
             return new Version(0, 0, 0, 0).ToString();
         }
+
+        public static String GetShortcutWorkingDir(String file)
+        {
+            string? dirName = "";
+
+            try
+            {
+                if (System.IO.Path.GetExtension(file).ToLower() == ".lnk")
+                {
+                    IWshShortcut extension = (IWshShortcut)new WshShell().CreateShortcut(file);
+                    
+                    {
+                        dirName = System.IO.Path.GetDirectoryName(extension.TargetPath);
+                    }
+                }
+                else
+                {
+                    dirName = System.IO.Path.GetDirectoryName(file);
+                }
+            }
+            catch { }
+
+            return dirName != null ? dirName : "";
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, IntPtr hToken, out IntPtr ppszPath);
+
+        public static string ParseGuidInPath(string filePath)
+        {
+            Match matches = Regex.Match(filePath, @"{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}", RegexOptions.IgnoreCase);
+            if (!matches.Success)
+            {
+                return filePath;
+            }
+
+            Guid folderGuid = new Guid(matches.Value);
+
+            IntPtr pPath;
+            int result = SHGetKnownFolderPath(folderGuid, 0, IntPtr.Zero, out pPath);
+
+            if (result >= 0)
+            {
+                string? knownFolder = Marshal.PtrToStringUni(pPath);
+                Marshal.FreeCoTaskMem(pPath);
+                if (knownFolder != null)
+                {
+                    string fullPath = filePath.Replace(matches.Value, knownFolder);
+                    return fullPath;
+                }
+            }
+            else
+            {
+                throw new ExternalException("Unable to retrieve the known folder path.", result);
+            }
+            return filePath;
+        }
+
+       
     }
 }

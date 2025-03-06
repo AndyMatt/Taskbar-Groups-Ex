@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,60 +30,45 @@ namespace TaskbarGroupsEx
             if (Shortcut == null)
                 return;
 
-            if (Shortcut.isWindowsApp)
+            txtShortcutName.Text = Shortcut.name;
+
+            switch(Shortcut.type)
             {
-                txtShortcutName.Text = handleWindowsApp.findWindowsAppsName(Shortcut.FilePath);
-            } else if (Shortcut.name == "")
-            {
-                if (File.Exists(Shortcut.FilePath) && System.IO.Path.GetExtension(Shortcut.FilePath).ToLower() == ".lnk")
-                {
-                    txtShortcutName.Text = frmGroup.handleExtName(Shortcut.FilePath);
-                }
-                else
-                {
-                    txtShortcutName.Text = System.IO.Path.GetFileNameWithoutExtension(Shortcut.FilePath);
-                }
-            } else
-            {
-                txtShortcutName.Text = Shortcut.name;
+                case ShortcutType.UWP:
+                    logo = handleWindowsApp.getWindowsAppIcon(Shortcut.FilePath, true);
+                    break;
+
+                case ShortcutType.URI:
+                    if(MotherForm != null)
+                        logo = ImageFunctions.GetShortcutIcon(Shortcut.GetFullIconPath(MotherForm.GetGroupName()));
+                    break;
+
+                case ShortcutType.Directory:
+                    logo = ImageFunctions.GetFolderIcon(Shortcut.FilePath);
+                    break;
+
+                case ShortcutType.Shortcut:
+                    picShortcut.Source = logo = frmGroup.handleLnkExt(Shortcut.FilePath);
+                    break;
+
+                case ShortcutType.URL:
+                    var task = ImageFunctions.GetFaviconFromURL(Shortcut.FilePath);
+                    task.Wait();
+                    logo = task.Result;
+                    break;
+
+                case ShortcutType.File:
+                case ShortcutType.Application:
+                    Icon? icon = Icon.ExtractAssociatedIcon(Shortcut.FilePath);
+                    if(icon != null)
+                    logo = icon != null ? ImageFunctions.IconToBitmapSource(icon) : ImageFunctions.GetErrorImage();
+                    break;
             }
 
-            if (Shortcut.isWindowsApp)
-            {
-                picShortcut.Source = handleWindowsApp.getWindowsAppIcon(Shortcut.FilePath, true);
-            }
-            else if (File.Exists(Shortcut.FilePath)) // Checks if the shortcut actually exists; if not then display an error image
-            {
-                String imageExtension = System.IO.Path.GetExtension(Shortcut.FilePath).ToLower();
+            if (logo == null)
+                logo = ImageFunctions.GetBlankImage();
 
-                // Start checking if the extension is an lnk (shortcut) file
-                // Depending on the extension, the icon can be directly extracted or it has to be gotten through other methods as to not get the shortcut arrow
-                if (imageExtension == ".lnk")
-                {
-                    logo = frmGroup.handleLnkExt(Shortcut.FilePath);
-                }
-                else
-                {
-                    logo = ImageFunctions.ExtractIconToBitmapSource(Shortcut.FilePath);
-                }
-                picShortcut.Source = logo;
-            }
-            else if (Directory.Exists(Shortcut.FilePath))
-            {
-                try
-                {
-                    picShortcut.Source = logo = ImageFunctions.ExtractIconToBitmapSource(Shortcut.FilePath);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-            }
-            else
-            {
-                logo = (BitmapImage)Application.Current.Resources["ErrorIcon"];
-                picShortcut.Source = logo;
-            }
+            picShortcut.Source = logo;
         }
 
         private void ucProgramShortcut_MouseEnter(object sender, MouseEventArgs e)

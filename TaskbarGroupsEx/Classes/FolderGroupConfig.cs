@@ -76,16 +76,13 @@ namespace TaskbarGroupsEx.Classes
                 newShortcut.Arguments = data[shortcutKey + ".Arguments"];
                 newShortcut.WorkingDirectory = data[shortcutKey + ".WorkingDirectory"];
                 newShortcut.FilePath = data[shortcutKey + ".FilePath"];
+                newShortcut.IconPath = data[shortcutKey + ".IconPath"];
 
-                bool isWindowsApp = false;
-                if (Boolean.TryParse(data[shortcutKey + ".isWindowsApp"], out isWindowsApp))
+                if (!data.ContainsKey(shortcutKey + ".Type") || !Enum.TryParse(data[shortcutKey + ".Type"], out newShortcut.type))
                 {
-                    newShortcut.isWindowsApp = isWindowsApp;
+                    throw new Exception($"Error While Reading 'Type' in {shortcutKey} from Configuration File.");
                 }
-                else
-                { 
-                    throw new Exception($"Error While Reading 'isWindowsApp' in {shortcutKey} from Configuration File."); 
-                }
+
                 ShortcutList.Add(newShortcut);
             }
 
@@ -103,11 +100,13 @@ namespace TaskbarGroupsEx.Classes
             data["ShortcutCount"] = ShortcutList.Count.ToString();
             for(int i = 0; i < ShortcutList.Count; i++)
             {
-                data["Shortcut" + i.ToString("D3")+ ".Name"] = ShortcutList[i].name;
-                data["Shortcut" + i.ToString("D3")+ ".Arguments"] = ShortcutList[i].Arguments;
-                data["Shortcut" + i.ToString("D3")+ ".WorkingDirectory"] = ShortcutList[i].WorkingDirectory;
-                data["Shortcut" + i.ToString("D3")+ ".FilePath"] = ShortcutList[i].FilePath;
-                data["Shortcut" + i.ToString("D3")+ ".isWindowsApp"] = ShortcutList[i].isWindowsApp.ToString();
+                string shortcutKey = "Shortcut" + i.ToString("D3");
+                data[shortcutKey + ".Name"] = ShortcutList[i].name;
+                data[shortcutKey + ".Type"] = ShortcutList[i].type.ToString();
+                data[shortcutKey + ".Arguments"] = ShortcutList[i].Arguments;
+                data[shortcutKey + ".WorkingDirectory"] = ShortcutList[i].WorkingDirectory;
+                data[shortcutKey + ".FilePath"] = ShortcutList[i].FilePath;
+                data[shortcutKey + ".IconPath"] = ShortcutList[i].IconPath;
             }
 
             File.WriteAllLines(configFilePath, data.Select(z => $"{z.Key}={z.Value}"));
@@ -132,6 +131,9 @@ namespace TaskbarGroupsEx.Classes
             string path = @"config\" + this.Name;
             System.IO.Directory.CreateDirectory(@path);
 
+            // Build the icon cache
+            cacheIcons();
+
             WriteConfigData(path);
 
             ImageFunctions.SaveBitmapSourceToFile(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0), path + @"\GroupImage.png");
@@ -148,11 +150,7 @@ namespace TaskbarGroupsEx.Classes
                  Path.GetFullPath(path + @"\GroupIcon.ico"),
                  path + "\\" + this.Name + ".lnk",
                  this.GetName()
-            );
-
-
-            // Build the icon cache
-            cacheIcons();
+            );            
 
             System.IO.File.Move(@path + "\\" + this.Name + ".lnk",
                 Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk")); // Move .lnk to correct directory
@@ -201,6 +199,11 @@ namespace TaskbarGroupsEx.Classes
             }
         }
 
+        public string GetRelativeDir(string dir)
+        {
+            return Path.GetRelativePath(MainPath.GetConfigPath(), dir);
+        }
+
         // Goal is to create a folder with icons of the programs pre-cached and ready to be read
         // Avoids having the icons need to be rebuilt everytime which takes time and resources
         public void cacheIcons()
@@ -225,7 +228,7 @@ namespace TaskbarGroupsEx.Classes
             // Loops through each shortcut added by the user and gets the icon
             // Writes the icon to the new folder in a .jpg format
             // Namign scheme for the files are done through Path.GetFileNameWithoutExtension()
-            for (int i = ShortcutList.Count; i < 0; i--)
+            for (int i = 0; i < ShortcutList.Count; i++)
             {
                 String filePath = ShortcutList[i].FilePath;
 
@@ -240,91 +243,59 @@ namespace TaskbarGroupsEx.Classes
                     }
                 }
 
-                string savePath;
+                string iconSavePath;
 
-                if (ShortcutList[i].isWindowsApp)
+                /* //case ShortcutType.URI:                
+                string removableChars = Regex.Escape(@"\/:@&'()<>#");
+                string pattern = "[" + removableChars + "]";
+                string iconfileName = Regex.Replace(filePath, pattern, "");
+                 savePath = iconPath + "\\" + iconfileName + ".png";
+                savePath = Path.GetRelativePath(MainPath.GetConfigPath(), savePath);
+                */
+
+                switch (ShortcutList[i].type)
                 {
-                    savePath = iconPath + "\\" + specialCharRegex.Replace(filePath, string.Empty) + ".png";
-                } else if (Directory.Exists(filePath))
-                {
-                    savePath = iconPath + "\\" + Path.GetFileNameWithoutExtension(filePath) + "_FolderObjTSKGRoup.png";
-                } else
-                {
-                    savePath = iconPath + "\\" + Path.GetFileNameWithoutExtension(filePath) + ".png";
+                    case ShortcutType.UWP:
+                    case ShortcutType.URI:
+                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(filePath) + ".png");
+                        break;
+
+                    case ShortcutType.Directory:
+                    case ShortcutType.URL:
+                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(ShortcutList[i].name) + ".png");
+                        break;
+
+                    case ShortcutType.Shortcut:
+                    case ShortcutType.Application:
+                    default:
+                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(Path.GetFileNameWithoutExtension(filePath)) + ".png");
+                        break;
                 }
+
+                ShortcutList[i].IconPath = iconSavePath;
 
                 if (programShortcutControl != null && programShortcutControl.logo != null)
                 {
-                    ImageFunctions.SaveBitmapSourceToFile(programShortcutControl.logo, savePath);
-                }
+                    if (File.Exists(MainPath.GetConfigPath() + iconSavePath))
+                        File.Delete(MainPath.GetConfigPath() + iconSavePath);
 
-    }
+                    ImageFunctions.SaveBitmapSourceToFile(programShortcutControl.logo, MainPath.GetConfigPath() + iconSavePath);
+                }
+            }
+        }
+
+        private string GetSafeFileName(string fileName)
+        {
+            string removableChars = Regex.Escape(@"\/:@&'()<>#");
+            string pattern = "[" + removableChars + "]";
+            return Regex.Replace(fileName, pattern, "");
         }
 
         // Try to load an iamge from the cache
         // Takes in a programPath (shortcut) and processes it to the proper file name
-        public BitmapImage loadImageCache(ProgramShortcut shortcutObject)
+        public BitmapSource loadImageCache(ProgramShortcut shortcutObject)
         {
-
-            String programPath = shortcutObject.FilePath;
-
-            if (System.IO.File.Exists(programPath) || Directory.Exists(programPath) || shortcutObject.isWindowsApp)
-            {
-                try
-                {
-                    // Try to construct the path like if it existed
-                    // If it does, directly load it into memory and return it
-                    // If not then it would throw an exception in which the below code would catch it
-                    String cacheImagePath = MainPath.Config + this.Name + @"\Icons\" + ((shortcutObject.isWindowsApp) ? specialCharRegex.Replace(programPath, string.Empty) : 
-                        @Path.GetFileNameWithoutExtension(programPath)) + (Directory.Exists(programPath)? "_FolderObjTSKGRoup.jpg" : ".png");
-
-                    using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(cacheImagePath)))
-                    {
-                        var bitmap = new BitmapImage();
-                        bitmap.BeginInit();
-                        bitmap.StreamSource = ms;
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.EndInit();
-                        bitmap.Freeze();
-                        return bitmap;
-                    }                    
-                }
-                catch (Exception)
-                {
-                    // Try to recreate the cache icon image and catch and missing file/icon situations that may arise
-
-                    // Checks if the original file even exists to make sure to not do any extra operations
-
-                    // Same processing as above in cacheIcons()
-                    String path = MainPath.Config + this.Name + @"\Icons\" + Path.GetFileNameWithoutExtension(programPath) + (Directory.Exists(programPath) ? "_FolderObjTSKGRoup.png" : ".png");
-
-                    BitmapSource finalImage;
-
-                    if (Path.GetExtension(programPath).ToLower() == ".lnk")
-                    {
-                        finalImage = frmGroup.handleLnkExt(programPath);
-                    }
-                    else if (Directory.Exists(programPath))
-                    {
-                        finalImage = ImageFunctions.IconToBitmapSource(handleFolder.GetFolderIcon(programPath));
-                    } else 
-                    {
-                        finalImage = ImageFunctions.IconPathToBitmapSource(programPath);
-                    }
-
-
-                    // Above all sets finalIamge to the bitmap that was generated from the icons
-                    // Save the icon after it has been fetched by previous code
-                    ImageFunctions.SaveBitmapSourceToFile(finalImage, path);
-
-                    // Return the said image
-                    return new BitmapImage(new Uri(path, UriKind.RelativeOrAbsolute));
-                }
-            }
-            else
-            {
-                return (BitmapImage)Application.Current.Resources["ErrorIcon"];
-            }
+            return this.Name != null ? ImageFunctions.GetShortcutIcon(shortcutObject.GetFullIconPath(this.Name)) : (BitmapImage)ImageFunctions.GetErrorImage();
         }
 
         public static string GetPixelFormat(BitmapSource i)
