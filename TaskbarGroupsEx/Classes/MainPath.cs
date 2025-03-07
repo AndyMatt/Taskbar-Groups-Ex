@@ -1,4 +1,3 @@
-using IWshRuntimeLibrary;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -81,11 +80,7 @@ namespace TaskbarGroupsEx.Classes
             {
                 if (System.IO.Path.GetExtension(file).ToLower() == ".lnk")
                 {
-                    IWshShortcut extension = (IWshShortcut)new WshShell().CreateShortcut(file);
-                    
-                    {
-                        dirName = System.IO.Path.GetDirectoryName(extension.TargetPath);
-                    }
+                    dirName = System.IO.Path.GetDirectoryName(ShellLink.GetShortcutWorkingDir(file));
                 }
                 else
                 {

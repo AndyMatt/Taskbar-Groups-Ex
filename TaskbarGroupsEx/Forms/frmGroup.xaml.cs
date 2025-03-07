@@ -9,7 +9,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using TaskbarGroupsEx.Classes;
-using IWshRuntimeLibrary;
 
 namespace TaskbarGroupsEx
 {
@@ -332,21 +331,21 @@ namespace TaskbarGroupsEx
 
         public static BitmapSource handleLnkExt(String file)
         {
-            IWshShortcut lnkIcon = (IWshShortcut)new WshShell().CreateShortcut(file);
-            String[] icLocation = lnkIcon.IconLocation.Split(',');
+            String icLocation = ShellLink.GetIconPath(file);
+            String workingDir = ShellLink.GetShortcutWorkingDir(file);
             // Check if iconLocation exists to get an .ico from; if not then take the image from the .exe it is referring to
             // Checks for link iconLocations as those are used by some applications
-            if (icLocation[0] != "" && !lnkIcon.IconLocation.Contains("http"))
+            if (icLocation != "" && !icLocation.Contains("http"))
             {
-                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(icLocation[0])));
+                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(icLocation)));
             }
-            else if (icLocation[0] == "" && lnkIcon.TargetPath == "")
+            else if (icLocation == "" && workingDir == "")
             {
                 return handleWindowsApp.getWindowsAppIcon(file);
             }
             else
             {
-                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(lnkIcon.TargetPath)));
+                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(workingDir)));
             }
         }
 

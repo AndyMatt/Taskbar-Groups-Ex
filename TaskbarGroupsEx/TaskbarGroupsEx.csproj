@@ -54,7 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Interop.IWshRuntimeLibrary" Version="1.0.1" />
     <PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
     <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.1" />
   </ItemGroup>

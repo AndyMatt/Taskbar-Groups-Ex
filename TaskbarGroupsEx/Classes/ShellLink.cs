@@ -31,6 +31,27 @@ namespace TaskbarGroupsEx.Classes
             newShortcutSave.Save(saveLocation, true);
         }
 
+        public static string GetShortcutWorkingDir(string shortcutPath)
+        {
+            CShellLink link = new CShellLink();
+            ((IPersistFile)link).Load(shortcutPath, 0);
+            StringBuilder sb = new StringBuilder(255);
+            ((IShellLinkW)link).GetWorkingDirectory(sb, sb.Capacity);
+            return sb.ToString();
+        }
+
+        public static string GetIconPath(string shortcutPath)
+        {
+            CShellLink link = new CShellLink();
+            ((IPersistFile)link).Load(shortcutPath, 0);
+            StringBuilder sb = new StringBuilder(255);
+            int idx;
+            ((IShellLinkW)link).GetIconLocation(sb, sb.Capacity, out idx);
+            if (sb.ToString() == "") //Fallback
+                ((IShellLinkW)link).GetPath(sb, sb.Capacity, 0, 0);
+            return sb.ToString();
+        }
+
         #region COM APIs
         [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IShellLinkW
@@ -48,7 +69,7 @@ namespace TaskbarGroupsEx.Classes
             void SetHotKey(short wHotKey);
             void GetShowCmd(out uint iShowCmd);
             void SetShowCmd(uint iShowCmd);
-            void GetIconLocation([Out(), MarshalAs(UnmanagedType.LPWStr)] out StringBuilder pszIconPath, int cchIconPath, out int iIcon);
+            void GetIconLocation([Out(), MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int iIcon);
             void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
             void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
             void Resolve(IntPtr hwnd, uint fFlags);

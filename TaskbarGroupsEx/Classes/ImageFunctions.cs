@@ -286,7 +286,7 @@ namespace TaskbarGroupsEx.Classes
             return GetDefaultShortcutIcon();
         }
 
-        public static async Task<BitmapSource>GetFaviconFromURL(string url)
+        public static Task<BitmapSource>GetFaviconFromURL(string url)
         {
             try
             {
@@ -303,7 +303,7 @@ namespace TaskbarGroupsEx.Classes
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.EndInit();
                     bitmap.Freeze();
-                    return bitmap;
+                    return Task.FromResult((BitmapSource)bitmap);
                 }
             }
             catch (Exception e)
@@ -311,7 +311,7 @@ namespace TaskbarGroupsEx.Classes
                 MessageBox.Show(e.Message);
             }
 
-            return (BitmapSource)Application.Current.Resources["ErrorIcon"];
+            return Task.FromResult((BitmapSource)Application.Current.Resources["ErrorIcon"]);
         }
         //
         // END OF CLASS

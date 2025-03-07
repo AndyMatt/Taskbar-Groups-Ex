@@ -1,5 +1,4 @@
-﻿using IWshRuntimeLibrary;
-using System.IO;
+﻿using System.IO;
 using System.Text.RegularExpressions;
 
 namespace TaskbarGroupsEx.Classes
@@ -41,14 +40,10 @@ namespace TaskbarGroupsEx.Classes
             {
                 if (System.IO.Path.GetExtension(shortcutCommand).ToLower() == ".lnk")
                 {
-                    IWshShortcut shortcutParser = (IWshShortcut)new WshShell().CreateShortcut(shortcutCommand);
-                    {
-                        string iconLocation = shortcutParser.IconLocation;
-                        newShortcut.FilePath = shortcutCommand;
-                        newShortcut.WorkingDirectory = shortcutParser.WorkingDirectory;
-                        newShortcut.type = ShortcutType.Shortcut;
-                        return newShortcut;
-                    }
+                    string iconLocation = ShellLink.GetIconPath(shortcutCommand);
+                    newShortcut.FilePath = shortcutCommand;
+                    newShortcut.type = ShortcutType.Shortcut;
+                    return newShortcut;
                 }
                 else if (System.IO.Path.GetExtension(shortcutCommand).ToLower() == ".url")
                 {
