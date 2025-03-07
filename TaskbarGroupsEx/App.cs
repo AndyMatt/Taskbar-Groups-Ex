@@ -4,6 +4,9 @@ using System.Runtime;
 using System.Windows;
 using TaskbarGroupsEx.Classes;
 using TaskbarGroupsEx.Forms;
+using System.Reflection;
+
+[assembly: AssemblyKeyFileAttribute("TaskbarGroupsEx.snk")]
 
 namespace TaskbarGroupsEx
 {

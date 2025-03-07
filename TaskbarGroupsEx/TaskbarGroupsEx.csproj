@@ -16,6 +16,21 @@
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <ErrorReport>none</ErrorReport>
+    <SignAssembly>True</SignAssembly>
+    <DelaySign>False</DelaySign>
+    <AssemblyOriginatorKeyFile>TaskbarGroupsEx.snk</AssemblyOriginatorKeyFile>
+    <Title>Taskbar Groups Ex</Title>
+    <Description>An Upgraded Lightweight Utility for Organizing the Taskbar through Groups</Description>
+    <Copyright> MIT License</Copyright>
+    <PackageProjectUrl>https://github.com/AndyMatt/Taskbar-Groups-Ex</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AndyMatt/Taskbar-Groups-Ex</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Taskbar;Windows;Folders</PackageTags>
+    <NeutralLanguage>en</NeutralLanguage>
+    <FileVersion></FileVersion>
+    <AssemblyVersion></AssemblyVersion>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -54,13 +69,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
+    <PackageReference Include="Interop.UIAutomationClient.Signed" Version="10.19041.0" />
     <PackageReference Include="PixiEditor.ColorPicker" Version="3.4.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="System.Drawing.Common">
-      <HintPath>..\..\..\..\..\..\..\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\shared\Microsoft.WindowsDesktop.App\8.0.12\System.Drawing.Common.dll</HintPath>
+      <HintPath>C:\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\shared\Microsoft.WindowsDesktop.App\8.0.12\System.Drawing.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
 
