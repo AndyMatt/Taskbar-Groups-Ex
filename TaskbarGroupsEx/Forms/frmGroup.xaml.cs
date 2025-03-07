@@ -248,13 +248,21 @@ namespace TaskbarGroupsEx
         // Change positions of shortcut panels
         public void RepositionControl(ucProgramShortcut shortcut, int offset)
         {
+            if (fgConfig == null)
+                return;
+
             int controlIndex = pnlShortcuts.Children.IndexOf(shortcut);
             int newIndex = controlIndex + offset;
 
             if (newIndex > -1 && newIndex < (pnlShortcuts.Children.Count))
             {
+                ProgramShortcut programShortcut = fgConfig.ShortcutList[controlIndex];
+                fgConfig.ShortcutList.RemoveAt(controlIndex);
+                fgConfig.ShortcutList.Insert(newIndex, programShortcut);
+
                 pnlShortcuts.Children.Remove(shortcut);
                 pnlShortcuts.Children.Insert(newIndex, shortcut);
+                
                 RefreshProgramControls();
             }
         }
