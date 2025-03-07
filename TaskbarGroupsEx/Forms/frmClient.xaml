@@ -19,14 +19,14 @@
                 <TextBlock Text="Have issues/bugs?" TextWrapping="Wrap" x:Name="textBlock5" Margin="0,20,0,10" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="White"/>
                 <TextBlock Padding="25,10,25,10" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="Please report them to the" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
-                    <Hyperlink FontSize="13" NavigateUri="https://github.com/tjackenpacken/taskbar-groups" RequestNavigate="Hyperlink_RequestNavigate">Github</Hyperlink>
+                    <Hyperlink FontSize="13" NavigateUri="https://github.com/AndyMatt/Taskbar-Groups-Ex/" RequestNavigate="Hyperlink_RequestNavigate">Github</Hyperlink>
                     <TextBlock Text="repo" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
                 </TextBlock>
                 <TextBlock x:Name="currentVersion" Text="Current Version: {CurrentVersion}" TextWrapping="Wrap" Margin="0,30,0,0" HorizontalAlignment="Center" FontSize="13" Foreground="White" Padding="0,0,0,5"/>
 
                 <TextBlock TextWrapping="Wrap" Padding="20,0,20,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="Latest Version:" TextWrapping="Wrap" FontSize="13" Foreground="White" HorizontalAlignment="Center" />
-                    <Hyperlink x:Name="githubVersion" FontSize="13" NavigateUri="https://github.com/tjackenpacken/taskbar-groups/releases" RequestNavigate="Hyperlink_RequestNavigate">{LatestVersion}</Hyperlink>
+                    <Hyperlink x:Name="githubVersion" FontSize="13" NavigateUri="https://github.com/AndyMatt/Taskbar-Groups-Ex/releases" RequestNavigate="Hyperlink_RequestNavigate">{LatestVersion}</Hyperlink>
                 </TextBlock>
             </StackPanel>
 

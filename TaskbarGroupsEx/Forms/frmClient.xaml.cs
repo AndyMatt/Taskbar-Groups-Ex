@@ -20,7 +20,7 @@ namespace TaskbarGroupsEx
             InitializeComponent();
             Reload();
            
-            currentVersion.Text = currentVersion.Text.Replace("{CurrentVersion}", "v" + MainPath.GetAssemblyVersion());
+            currentVersion.Text = currentVersion.Text.Replace("{CurrentVersion}", MainPath.GetAssemblyVersion());
 
             githubVersion.Inlines.Clear();
             githubVersion.Inlines.Add(Task.Run(() => getVersionData()).Result);
@@ -100,7 +100,7 @@ namespace TaskbarGroupsEx
             {
                 HttpClient client = new HttpClient();
                 client.DefaultRequestHeaders.Add("User-Agent", "taskbar-groups");
-                var res = await client.GetAsync("https://api.github.com/repos/tjackenpacken/taskbar-groups/releases");
+                var res = await client.GetAsync("https://api.github.com/repos/AndyMatt/Taskbar-Groups-Ex/releases");
                 res.EnsureSuccessStatusCode();
                 string responseBody = await res.Content.ReadAsStringAsync();
 

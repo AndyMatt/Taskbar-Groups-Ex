@@ -64,12 +64,18 @@ namespace TaskbarGroupsEx.Classes
                     AssemblyName? assName = _assembly.GetName();
                     if (assName.Version != null)
                     {
-                        return assName.Version.ToString();
+                        Version ver = assName.Version;
+                        string VersionStr = (ver.ToString());
+                        while(VersionStr.EndsWith(".0"))
+                        {
+                            VersionStr = VersionStr.Substring(0, VersionStr.Length - 2);
+                        }
+                        return VersionStr;
                     }
                 }
             }
 
-            return new Version(0, 0, 0, 0).ToString();
+            return "0.0";
         }
 
         public static String GetShortcutWorkingDir(String file)
