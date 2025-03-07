@@ -67,7 +67,7 @@ namespace TaskbarGroupsEx
             ProfileOptimization.SetProfileRoot(MainPath.GetJitPath());
             NativeMethods.WindowsUXHelper.SetWindowsUXTheme();
 
-            WaitForDebugger();
+            //WaitForDebugger();
 
             if(!CheckWriteAccessToDirectory(MainPath.GetPath()))
             {
