@@ -1,16 +1,17 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using TaskbarGroupsEx.Handlers;
 
 namespace TaskbarGroupsEx.Classes
 {
     public enum ShortcutType
     {
         Application,
-        Directory,
         UWP,
         URI,
         URL,
         File,
+        Directory,
         Unknown,
     }
 
@@ -37,12 +38,17 @@ namespace TaskbarGroupsEx.Classes
 
             if (System.IO.File.Exists(shortcutCommand))
             {
-                if (System.IO.Path.GetExtension(shortcutCommand).ToLower() == ".lnk")
+                MemoryStream? memoryStream = FileHandler.GetMemoryStream(shortcutCommand);
+                if (memoryStream != null)
                 {
-                    string iconLocation = ShellLink.GetIconPath(shortcutCommand);
-                    newShortcut.FilePath = shortcutCommand;
-                    newShortcut.type = ShortcutType.Shortcut;
-                    return newShortcut;
+                    if (lnkFileHandler.Islnk(memoryStream))
+                    {
+                        lnkFileHandler fileShortcut = new lnkFileHandler(memoryStream);
+
+                        newShortcut.FilePath = fileShortcut.GetTargetCommand();
+                        newShortcut.IconPath = fileShortcut.GetIconPath();
+                        newShortcut.type = fileShortcut.GetShortcutType();
+                    }
                 }
                 else if (System.IO.Path.GetExtension(shortcutCommand).ToLower() == ".url")
                 {
