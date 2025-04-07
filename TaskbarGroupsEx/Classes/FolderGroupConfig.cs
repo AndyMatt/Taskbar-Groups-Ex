@@ -265,7 +265,6 @@ namespace TaskbarGroupsEx.Classes
                         iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(ShortcutList[i].name) + ".png");
                         break;
 
-                    case ShortcutType.Shortcut:
                     case ShortcutType.Application:
                     default:
                         iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(Path.GetFileNameWithoutExtension(filePath)) + ".png");

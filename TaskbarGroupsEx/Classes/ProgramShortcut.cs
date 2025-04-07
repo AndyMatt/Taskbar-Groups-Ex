@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace TaskbarGroupsEx.Classes
@@ -6,7 +6,6 @@ namespace TaskbarGroupsEx.Classes
     public enum ShortcutType
     {
         Application,
-        Shortcut,
         Directory,
         UWP,
         URI,
@@ -118,10 +117,6 @@ namespace TaskbarGroupsEx.Classes
             {
                 case ShortcutType.UWP:
                     name = handleWindowsApp.findWindowsAppsName(FilePath);
-                    break;
-
-                case ShortcutType.Shortcut:
-                    name = frmGroup.handleExtName(FilePath);
                     break;
 
                 case ShortcutType.Directory:
