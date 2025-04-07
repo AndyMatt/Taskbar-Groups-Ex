@@ -318,56 +318,15 @@ namespace TaskbarGroupsEx
 
         private void handleIcon(String file, String imageExtension)
         {
+            BitmapSource? imageSource = null;
             // Checks if the files being added/dropped are an .exe or .lnk in which tye icons need to be extracted/processed
             if (specialImageExt.Contains(imageExtension))
             {
-                if (imageExtension == ".lnk")
-                {
-                    cmdAddGroupIcon.Source = handleLnkExt(file);
-                }
-                else
-                {
-                    cmdAddGroupIcon.Source = Classes.ImageFunctions.IconPathToBitmapSource(file);
-                }
+                imageSource = Classes.ImageFunctions.IconPathToBitmapSource(file);
             }
-            else
-            {
-                cmdAddGroupIcon.Source = ImageFunctions.BitmapSourceFromFile(file);
-            }
+          
+            cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(imageSource, ImageBox.Width, ImageBox.Height);
             lblAddGroupIcon.Text = "Change group icon";
-        }
-
-        public static BitmapSource handleLnkExt(String file)
-        {
-            String icLocation = ShellLink.GetIconPath(file);
-            String workingDir = ShellLink.GetShortcutWorkingDir(file);
-            // Check if iconLocation exists to get an .ico from; if not then take the image from the .exe it is referring to
-            // Checks for link iconLocations as those are used by some applications
-            if (icLocation != "" && !icLocation.Contains("http"))
-            {
-                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(icLocation)));
-            }
-            else if (icLocation == "" && workingDir == "")
-            {
-                return handleWindowsApp.getWindowsAppIcon(file);
-            }
-            else
-            {
-                return ImageFunctions.IconPathToBitmapSource(System.IO.Path.GetFullPath(Environment.ExpandEnvironmentVariables(workingDir)));
-            }
-        }
-
-        public static String handleExtName(String file)
-        {
-            if (file == null)
-                return "Error";
-
-            string fileName = System.IO.Path.GetFileName(file);
-            string? filepath = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file));
-            Shell32.Folder shellFolder = shell.NameSpace(filepath);
-            Shell32.FolderItem shellItem = shellFolder.Items().Item(fileName);
-
-            return shellItem.Name;
         }
 
         // Below two functions highlights the background as you would if you hovered over it with a mosue
