@@ -324,7 +324,11 @@ namespace TaskbarGroupsEx
             {
                 imageSource = Classes.ImageFunctions.IconPathToBitmapSource(file);
             }
-          
+            else
+            {
+                imageSource = ImageFunctions.BitmapSourceFromFile(file);
+            }
+
             cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(imageSource, ImageBox.Width, ImageBox.Height);
             lblAddGroupIcon.Text = "Change group icon";
         }
