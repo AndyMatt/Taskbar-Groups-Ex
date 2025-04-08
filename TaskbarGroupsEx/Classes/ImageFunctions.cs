@@ -45,15 +45,25 @@ namespace TaskbarGroupsEx.Classes
 
         public static BitmapSource ResizeImage(BitmapSource image, double width, double height, bool Padding = false)
         {
-                double MinScale = Math.Min(width / image.Width, height / image.Height);
-                BitmapSource resizedBmp = new TransformedBitmap(image, new ScaleTransform(MinScale, MinScale, 10, 10));
+            DrawingGroup drawingGroup = new DrawingGroup();
+            RenderOptions.SetBitmapScalingMode(drawingGroup, BitmapScalingMode.Fant);
 
-            if (!Padding)
-                return resizedBmp;
+            double MinScale = Math.Min(width / image.Width, height / image.Height);
+
+
+            double sourceWidth = Padding ? image.Width * MinScale : width;
+            double sourceHeight = Padding ? image.Height * MinScale : height;
+
+            double x = Padding ? (width - sourceWidth) / 2.0 : 0.0;
+            double y = Padding ? (height - sourceHeight) / 2.0 : 0.0;
+  
+            Rect targetRect = new Rect(x, y, sourceWidth, sourceHeight);
+
+            drawingGroup.Children.Add(new ImageDrawing(image, targetRect));
 
             DrawingVisual drawingVisual = new DrawingVisual();
             DrawingContext drawingContext = drawingVisual.RenderOpen();
-            drawingContext.DrawImage(resizedBmp, new Rect(((width- resizedBmp.Width)/2.0), ((height- resizedBmp.Height)/2.0), resizedBmp.Width, resizedBmp.Height));
+            drawingContext.DrawDrawing(drawingGroup);
             drawingContext.Close();
 
             RenderTargetBitmap bmp = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32);
