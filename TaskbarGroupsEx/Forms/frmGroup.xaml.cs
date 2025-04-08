@@ -185,7 +185,11 @@ namespace TaskbarGroupsEx
 
                     foreach (var file in files)
                     {
-                        outFiles.Add(file);
+                        if(Uri.IsWellFormedUriString(file, UriKind.Absolute) ||
+                            File.Exists(file) || Path.Exists(file))
+                        {  
+                            outFiles.Add(file); 
+                        }
                     }
                 }
                 catch (Exception exception)
