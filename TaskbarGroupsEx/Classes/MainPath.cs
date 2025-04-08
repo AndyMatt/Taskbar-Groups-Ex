@@ -131,6 +131,50 @@ namespace TaskbarGroupsEx.Classes
             return filePath;
         }
 
-       
+        public static string GetRelativeDir(string dir)
+        {
+            return Path.GetRelativePath(GetConfigPath(), dir);
+        }
+
+        public static string GetSafeFileName(string? fileName)
+        {
+            if (fileName == null)
+                return "";
+
+            string removableChars = Regex.Escape(@"\/:@&'()<>#");
+            string pattern = "[" + removableChars + "]";
+            fileName = Regex.Replace(fileName, " ", "_");
+            return Regex.Replace(fileName, pattern, "");
+        }
+
+        public static string CreateFolder(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            return path;
+        }
+
+        public static string CreateNewFolder(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
+               
+            Directory.CreateDirectory(path);
+            return path;
+        }
+
+        public static string GetCommonStartMenuPath()
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
+        }
+
+        public static string GetStartMenuPath()
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+        }
     }
 }
