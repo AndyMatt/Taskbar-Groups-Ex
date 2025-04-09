@@ -7,7 +7,6 @@ namespace TaskbarGroupsEx.Classes
 {
     public class IconFactory
     {
-
         #region constants
 
         /// Represents the max allowed width of an icon.
@@ -56,12 +55,7 @@ namespace TaskbarGroupsEx.Classes
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
-            /*
-            // validates the pngs
-            IconFactory.ThrowForInvalidPngs(images);
-            */
-
-            BitmapSource[] orderedImages = images.OrderBy(i => i.Width)
+            BitmapSource[] orderedImages = images.OrderByDescending(i => i.Width)
                                            .ThenBy(i => i.Height)
                                            .ToArray();
 
@@ -121,34 +115,6 @@ namespace TaskbarGroupsEx.Classes
                 }
             }
 
-        }
-
-        private static void ThrowForInvalidPngs(IEnumerable<Bitmap> images)
-        {
-            foreach (var image in images)
-            {
-                if (image.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppArgb)
-                {
-                    throw new InvalidOperationException
-                        (string.Format("Required pixel format is PixelFormat.{0}.",
-                                       System.Drawing.Imaging.PixelFormat.Format32bppArgb.ToString()));
-                }
-
-                if (image.RawFormat.Guid != ImageFormat.Png.Guid)
-                {
-                    throw new InvalidOperationException
-                        ("Required image format is a portable network graphic (png).");
-                }
-
-                if (image.Width > IconFactory.MaxIconWidth ||
-                    image.Height > IconFactory.MaxIconHeight)
-                {
-                    throw new InvalidOperationException
-                        (string.Format("Dimensions must be less than or equal to {0}x{1}",
-                                       IconFactory.MaxIconWidth,
-                                       IconFactory.MaxIconHeight));
-                }
-            }
         }
 
         private static byte GetIconHeight(BitmapSource image)
