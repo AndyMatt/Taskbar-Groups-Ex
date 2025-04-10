@@ -43,7 +43,7 @@ namespace TaskbarGroupsEx.Classes
             return new BitmapImage(new Uri("/Resources/DefaultIcon.png", UriKind.Relative));
         }
 
-        public static BitmapSource ResizeImage(BitmapSource image, double width, double height, bool Padding = false)
+        public static BitmapSource ResizeImage(BitmapSource image, double width, double height, bool maintainAspect = true)
         {
             DrawingGroup drawingGroup = new DrawingGroup();
             RenderOptions.SetBitmapScalingMode(drawingGroup, BitmapScalingMode.Fant);
@@ -51,11 +51,11 @@ namespace TaskbarGroupsEx.Classes
             double MinScale = Math.Min(width / image.Width, height / image.Height);
 
 
-            double sourceWidth = Padding ? image.Width * MinScale : width;
-            double sourceHeight = Padding ? image.Height * MinScale : height;
+            double sourceWidth = maintainAspect ? image.Width * MinScale : width;
+            double sourceHeight = maintainAspect ? image.Height * MinScale : height;
 
-            double x = Padding ? (width - sourceWidth) / 2.0 : 0.0;
-            double y = Padding ? (height - sourceHeight) / 2.0 : 0.0;
+            double x = maintainAspect ? (width - sourceWidth) / 2.0 : 0.0;
+            double y = maintainAspect ? (height - sourceHeight) / 2.0 : 0.0;
   
             Rect targetRect = new Rect(x, y, sourceWidth, sourceHeight);
 
