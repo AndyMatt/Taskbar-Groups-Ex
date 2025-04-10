@@ -1,7 +1,11 @@
-using System.IO;
+﻿using System.IO;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.GroupItems;
+using static TaskbarGroupsEx.Handlers.ApplicationShellItemHandler;
 
 namespace TaskbarGroupsEx.Handlers
 {
@@ -179,26 +183,17 @@ namespace TaskbarGroupsEx.Handlers
             public override string ToString() { return mString; }
             public static bool operator ==(LocationBlockPathW s1, string s2) { return s1.mString == s2;  }
             public static bool operator !=(LocationBlockPathW s1, string s2) { return s1.mString != s2; }
-        }
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct EnvironmentVariableLocationBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string mPath;
-            public LocationBlockPathW mPathW;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct DarwinPropertyBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string mPath;
-            public LocationBlockPathW mPathW;
+            public override bool Equals(Object? obj)
+            {
+                return string.Compare(ToString(), ((LocationBlockPathW?)obj).ToString(), true) == 0;
+            }
+            override public int GetHashCode()
+            {
+                MD5 md5Hasher = MD5.Create();
+                var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(mString));
+                return BitConverter.ToInt32(hashed, 0);
+            }
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -210,218 +205,10 @@ namespace TaskbarGroupsEx.Handlers
             public string mPath;
             public LocationBlockPathW mPathW;
         }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct ConsolePropertyBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public ushort mColorFlags;
-            public ushort mPopupFillAttributes;
-            public ushort mScreenWidthBufferSize;
-            public ushort mScreenHeightBufferSize;
-            public ushort mWindowWidth;
-            public ushort mWindowHeight;
-            public ushort mWindowOriginX;
-            public ushort mWindowOriginY;
-            uint mUnknown_1;
-            uint mUnknown_2;
-            uint mFontSize;
-            uint mFontFamily;
-            uint mFontWeight;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-            string mFaceName;
-            uint mCursorSize;
-            uint mFullScreen;
-            uint mInsertMode;
-            uint mAutomaticPositioning;
-            uint mHistoryBufferSize;
-            uint mHistoryBufferNumber;
-            uint mDuplicatesAllowedInHistory;
-            UInt128 mColorTable1;
-            UInt128 mColorTable2;
-            UInt128 mColorTable3;
-            UInt128 mColorTable4;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct DistrubutedLinkTracker
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public uint mLinkTrackerSize;
-            public uint mVersion;
-            Guid mMachineID;
-            Guid mDriodVolumeID;
-            Guid mDriodFileID;
-            Guid mBirthDriodVolumeID;
-            Guid mBirthDriodFileID;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct CodePageBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public uint mCodePage;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct SpecialFolderLocationBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public uint mSpecialFolderID;
-            public uint mFirstChildSegment;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct ShimLayerPropertyBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public string mName;
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct KnownFolderLocationBlock
-        {
-            public uint mSize;
-            public uint mSigniture;
-            public Guid mKnownFolder;
-            public uint mFirstChildSegmentOffset;
-        }
         #endregion
 
-        #region ApplicationShellItem
-        internal class ApplicationShellItem
-        {
-            public string? ID;
-            public string? ItemDisplayName;
-            public string? PackageFamilyName;
-            public string? PackageFullName;
-            public string? PackageInstallPath;
-            public string? LongDisplayName;
-            public string? SmallLogo; //SmallLogoPath(Icon);
-            public string? TileSmall; //Square70x70LogoPath;
-            public string? TileLarge; //Square310x310LogoPath;
-
-            private static Guid GuidApplicationShellItem = new Guid("4234d49b-0245-4df3-b780-3893943456e1");
-            private static Guid GuidApplicationShellPropertySets = new Guid("9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3");
-            private static Guid GuidCommonOpenProperties = new Guid("b725f130-47ef-101a-a5f1-02608c9eebac");
-            private static Guid GuidTileProperties = new Guid("86d40b4d-9069-443c-819a-2a54090dccec");
-
-            private uint GetProperty(ByteReader byteReader, ref object? property)
-            {
-                uint _size = byteReader.scan_uint();
-                using (ByteReader propSetReader = new ByteReader(byteReader.read_bytes(_size)))
-                {
-                    propSetReader.read_uint();//skipSize
-                    uint propertyType = propSetReader.read_uint();
-                    propSetReader.read_byte(); //buffer
-                    if(propSetReader.read_uint() == 0x1f)
-                    {
-                        property = propSetReader.read_LPWSTR();
-                    }
-                    return propertyType;
-                }
-            }
-
-            private void ReadPropertySets(ByteReader byteReader)
-            {
-                if (byteReader.findGuid(GuidApplicationShellPropertySets) == uint.MaxValue)
-                    return;
-
-                ByteReader propSetReader = new ByteReader(byteReader);
-
-                propSetReader.jump2guid(GuidApplicationShellPropertySets);
-                while (propSetReader.scan_uint() != 0)
-                {
-                    object? _property = null;
-                    uint propertyType = GetProperty(propSetReader, ref _property);
-
-                    switch (propertyType)
-                    {
-                        case 5: ID = (string?)_property; break; //ID
-                        case 15: PackageInstallPath = (string?)_property; break; //PackageInstallPath
-                        case 17: PackageFamilyName = (string?)_property; break; //PackageFamilyName
-                        case 21: PackageFullName = (string?)_property; break; //PackageFullName
-                    }
-                }
-            }
-
-            private void ReadCommonOpenProperties(ByteReader byteReader)
-            {
-                if (byteReader.findGuid(GuidCommonOpenProperties) == uint.MaxValue)
-                    return;
-
-                ByteReader propSetReader = new ByteReader(byteReader);
-                propSetReader.jump2guid(GuidCommonOpenProperties);
-                while (propSetReader.scan_uint() != 0)
-                {
-                    object? _property = null;
-                    uint propertyType = GetProperty(propSetReader, ref _property);
-                    if (propertyType == 10) //ItemDisplayName
-                    {
-                        ItemDisplayName = (string?)_property;
-                    }
-                }
-            }
-
-            private void ReadTileProperties(ByteReader byteReader)
-            {
-                if (byteReader.findGuid(GuidTileProperties) == uint.MaxValue)
-                    return;
-
-                ByteReader propSetReader = new ByteReader(byteReader);
-                propSetReader.jump2guid(GuidTileProperties);
-                while (propSetReader.scan_uint() != 0)
-                {
-                    object? _property = null;
-                    uint propertyType = GetProperty(propSetReader, ref _property);
-                    switch (propertyType)
-                    {
-                        case 2: SmallLogo = (string?)_property; break; //SmallLogoPath
-                        case 11: LongDisplayName = (string?)_property; break; //LongDisplayName
-                        case 19: TileLarge = (string?)_property; break; //Square310x310LogoPath
-                        case 20: TileSmall = (string?)_property; break; //Square70x70LogoPath
-                    }
-                }
-            }
-
-            private ApplicationShellItem(ByteReader byteReader)
-            {
-                ReadPropertySets(byteReader);
-                ReadCommonOpenProperties(byteReader);
-                ReadTileProperties(byteReader);
-            }
-
-            public static ApplicationShellItem? GetApplicationShellItem(ByteReader byteReader)
-            {
-                uint AppShellLocation = byteReader.findGuid(GuidApplicationShellItem);
-                if (AppShellLocation == uint.MaxValue)
-                    return null;
-
-                return new ApplicationShellItem(byteReader);
-            }
-        }
-        #endregion
-        
         private static Guid GuidLnkFile = new Guid("00021401-0000-0000-C000-000000000046");
         private const int GUID_SIZE = 16;
-
-        private static Dictionary<uint, Type> BlockLookup = new Dictionary<uint, Type>()
-        {
-            {0xa0000001, typeof(EnvironmentVariableLocationBlock) },
-            {0xa0000002, typeof(ConsolePropertyBlock) },
-            {0xa0000003, typeof(DistrubutedLinkTracker) },
-            {0xa0000004, typeof(CodePageBlock) },
-            {0xa0000005, typeof(SpecialFolderLocationBlock) },
-            {0xa0000006, typeof(DarwinPropertyBlock) },
-            {0xa0000007, typeof(IconLocationDataBlock) },
-            {0xa0000008, typeof(ShimLayerPropertyBlock) },
-            {0xa000000b, typeof(KnownFolderLocationBlock) },
-        };
 
         private static Dictionary<DataFlags, string> DataStringsFlags = new Dictionary<DataFlags, string>()
         {
@@ -435,13 +222,12 @@ namespace TaskbarGroupsEx.Handlers
         ShellLinkHeader mShellLinkHeader;
         ShellLinkInfo? mShellLinkInfo;
         Dictionary<string, object> mDataStrings;
-        Dictionary<string, object> mDataBlocks;
+        IconLocationDataBlock? mIconLocationDataBlock;
         ApplicationShellItem? mApplicationShellItem;
 
         public lnkFileHandler(MemoryStream dropData)
         {
             mDataStrings = new Dictionary<string, object>();
-            mDataBlocks = new Dictionary<string, object>();
 
             byte[] bs = dropData.ToArray();
             ByteReader byteReader = new ByteReader(bs);
@@ -469,27 +255,14 @@ namespace TaskbarGroupsEx.Handlers
                 ByteReader blockbyte = new ByteReader(byteReader.read_bytes(blockSize));
                 uint blockID = blockbyte.scan_uint(4);
 
-                if (blockID == 0xa0000009)
-                {
-                    ReadPropertyStoreDataBlock(blockbyte);
-                }
-                else if (blockID == 0xa000000c)
+                if (blockID == 0xa000000c) //ShellItemBlock
                 {
                     ReadShellItems(blockbyte);
                 }
-                else if (BlockLookup.ContainsKey(blockID))
+                else if (blockID == 0xa0000007) //IconLocationDataBlock
                 {
-                    Type blockReaderClass = typeof(BlockReader<>);
-                    Type constructedClass = blockReaderClass.MakeGenericType(BlockLookup[blockID]);
-                    dynamic? blockReader = Activator.CreateInstance(constructedClass);
-                    if (blockReader != null)
-                    {
-                        dynamic? block = blockReader.ReadBlock(blockbyte);
-                        if(block is not null)
-                        {
-                            mDataBlocks.Add(BlockLookup[blockID].Name, block);
-                        }
-                    }
+                    BlockReader<IconLocationDataBlock> blockReader = new BlockReader<IconLocationDataBlock>();
+                    mIconLocationDataBlock = blockReader.ReadBlock(blockbyte);
                 }
             }
         }
@@ -504,59 +277,12 @@ namespace TaskbarGroupsEx.Handlers
             return false;
         }
 
-        public ShortcutType GetShortcutType()
+        public static bool Islnk(string filePath)
         {
-            if (mShellLinkInfo == null && mApplicationShellItem != null)
-                return ShortcutType.UWP;
-
-            string targetCmd = GetTargetCommand();
-
-            if (Path.GetExtension(targetCmd) == ".exe")
-                return ShortcutType.Application;
-
-            if (File.Exists(targetCmd))
-                return ShortcutType.File;
-
-            if (Directory.Exists(targetCmd))
-                return ShortcutType.Directory;
-
-            return ShortcutType.Unknown;
-
-        }
-
-        public bool isUWP()
-        {
-            if (mShellLinkInfo == null && mApplicationShellItem != null)
-                return true;
-
-            return false;
-        }
-
-        public bool isExe()
-        {
-            if(Path.GetExtension(GetTargetCommand()) == ".exe")
-                return true;
-
-            return false;
-        }
-
-        public bool isPath()
-        {
-            if (!isExe())
+            if (File.Exists(filePath))
             {
-                if(!File.Exists(GetTargetCommand()))
-                { 
-                    return Directory.Exists(GetTargetCommand());
-                }
-            }
-            return false;
-        }
-
-        public bool isFile()
-        {
-            if (!isExe())
-            {
-                return File.Exists(GetTargetCommand());
+                MemoryStream? memoryStream = FileHandler.GetMemoryStream(filePath);
+                return memoryStream != null && lnkFileHandler.Islnk(memoryStream);
             }
             return false;
         }
@@ -565,8 +291,12 @@ namespace TaskbarGroupsEx.Handlers
         {
             if (mApplicationShellItem != null)
             {
-                if (mApplicationShellItem.PackageFamilyName != null)
-                { return mApplicationShellItem.PackageFamilyName; }
+                if (mApplicationShellItem.GetPackageFamilyName() != null)
+                {
+                    string? AppID = mApplicationShellItem.GetAppID();
+                    if(AppID != null && AppID != "")
+                        return AppID;
+                }
             }
             if (mShellLinkInfo != null)
             {
@@ -578,19 +308,46 @@ namespace TaskbarGroupsEx.Handlers
 
         public string GetIconPath()
         {
-            //ShellLink.GetIconPath(file);
-
             if (mApplicationShellItem != null)
             {
-                if (mApplicationShellItem.SmallLogo != null)
-                    return mApplicationShellItem.SmallLogo;
+                string? smallIcon = mApplicationShellItem.GetSmallLogo();
+                if (smallIcon != null && smallIcon != "")
+                    return smallIcon;
             }
-            if (mDataBlocks.ContainsKey("IconLocationDataBlock"))
+            if (mIconLocationDataBlock != null)
             {
-                IconLocationDataBlock iconLocationBlock = (IconLocationDataBlock)mDataBlocks["IconLocationDataBlock"];
-                return iconLocationBlock.mPathW == "" ? iconLocationBlock.mPathW.ToString() : iconLocationBlock.mPath;
+                IconLocationDataBlock locationBlock = (IconLocationDataBlock)mIconLocationDataBlock;
+                return locationBlock.mPathW == "" ? locationBlock.mPathW.ToString() : locationBlock.mPath;
             }
             return GetTargetCommand();
+        }
+
+        public string GetExpandedIconPath()
+        {
+            return Environment.ExpandEnvironmentVariables(GetIconPath());
+        }
+
+        private string GetDataString(string key)
+        {
+            if (mDataStrings.ContainsKey(key))
+            {
+                if (mDataStrings[key] is string)
+                {
+                    return (string)mDataStrings[key];
+                }
+            }
+
+            return "";
+        }
+
+        public string GetArguments()
+        {
+            return GetDataString("Arguments");
+        }
+
+        public string GetWorkingDirectory()
+        {
+            return GetDataString("WorkingDirectory");
         }
 
         Dictionary<string, object> ProcessStringDataFlags(DataFlags mDataFlags, ByteReader byteReader)
@@ -614,9 +371,8 @@ namespace TaskbarGroupsEx.Handlers
         {
             ushort IDListSize = byteReader.read_ushort();
             byte[] IDListBytes = byteReader.read_bytes(IDListSize);
-            ByteReader IDByteReader = new ByteReader(IDListBytes);
 
-            mApplicationShellItem = ApplicationShellItem.GetApplicationShellItem(IDByteReader);
+            mApplicationShellItem = ApplicationShellItem.GetApplicationShellItem(IDListBytes);
         }
 
         ShellLinkInfoHeader ReadShellLinkInfoHeader(ByteReader byteReader)
@@ -656,30 +412,49 @@ namespace TaskbarGroupsEx.Handlers
             return shellVolumeInfo;
         }
 
-        ShimLayerPropertyBlock ReadShimLayerPropertyBlock(ByteReader byteReader)
+        public static DynamicGroupItem? GetGroupItem(string filePath)
         {
-            ShimLayerPropertyBlock shimLayerPropertyBlock = new ShimLayerPropertyBlock();
-            shimLayerPropertyBlock.mSize = byteReader.read_uint();
-            shimLayerPropertyBlock.mSigniture = byteReader.read_uint();
-            shimLayerPropertyBlock.mName = byteReader.read_UnicodeString((int)shimLayerPropertyBlock.mSize - 8);
-            return shimLayerPropertyBlock;
-        }
+            DynamicGroupItem? groupItem = null;
 
-
-        void ReadPropertyStoreDataBlock(ByteReader byteReader)
-        {
-            ByteReader propertyReader = new ByteReader(byteReader.read_bytes(byteReader.scan_uint()));
-
-            uint mSize = propertyReader.read_uint();
-            uint mSigniture = propertyReader.read_uint();
-                
-            return;
-            /* //Do nothing for now
-            while (!propertyReader.End() && propertyReader.scan_uint() != 0)
+            MemoryStream? memoryStream = FileHandler.GetMemoryStream(filePath);
+            if (memoryStream != null && lnkFileHandler.Islnk(memoryStream))
             {
-                WindowsPropertySet propertySet = new WindowsPropertySet(propertyReader);                   
-            }*/
+                lnkFileHandler lnkFile = new lnkFileHandler(memoryStream);
+
+                if (lnkFile.mApplicationShellItem != null)
+                {
+                    string? appID = lnkFile.mApplicationShellItem.GetAppID();
+                    if (appID != null && appID != "")
+                    {
+                        groupItem = ShellApplicationHelper.GetGroupItem(appID);
+                    }
+                }
+                else
+                {
+                    string targetCmd = lnkFile.GetTargetCommand();
+
+                    if (Path.GetExtension(targetCmd) == ".exe")
+                    {
+                        groupItem = new ApplicationGroupItem(targetCmd, lnkFile.GetArguments(), lnkFile.GetWorkingDirectory());
+                    }
+                    else if (File.Exists(targetCmd))
+                    {
+                        groupItem = new FileGroupItem(targetCmd);
+                    }
+                    else if (Directory.Exists(targetCmd))
+                    {
+                        groupItem = new FolderGroupItem(targetCmd);
+                    }
+                }
+
+                if (groupItem != null)
+                {
+                    groupItem.mName = Path.GetFileNameWithoutExtension(filePath);
+                    groupItem.LoadIconFromFile(lnkFile.GetExpandedIconPath());
+                }
+            }          
+
+            return groupItem;
         }
-        
     }
 }
