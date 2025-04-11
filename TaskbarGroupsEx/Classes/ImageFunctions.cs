@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -11,31 +12,32 @@ namespace TaskbarGroupsEx.Classes
 {
     public static class ImageFunctions
     {
-        static BitmapSource? errorImage = null;
-        public static BitmapSource GetErrorImage()
+        static BitmapSource? errorBitmapSource = null;
+        public static BitmapSource GetErrorImageSource()
         {
-            if(errorImage == null)
+            if(errorBitmapSource == null)
             {
                 Bitmap errorBitmap = new Bitmap(32, 32);
                 Graphics flagGraphics = Graphics.FromImage(errorBitmap);
                 flagGraphics.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 32, 32);
-                errorImage = Bitmap2BitmapSource(errorBitmap);
+                errorBitmapSource = Bitmap2BitmapSource(errorBitmap);
             }
 
-            return errorImage;
+            return errorBitmapSource;
         }
 
-        public static BitmapSource GetBlankImage()
+        static BitmapImage? errorBitmapImage = null;
+        public static BitmapImage GetErrorImage()
         {
-            if (errorImage == null)
+            if (errorBitmapImage == null)
             {
-                Bitmap errorBitmap = new Bitmap(32, 32);
+                Bitmap errorBitmap = new Bitmap(32, 32);            
                 Graphics flagGraphics = Graphics.FromImage(errorBitmap);
-                flagGraphics.FillRectangle(System.Drawing.Brushes.Transparent, 0, 0, 32, 32);
-                errorImage = Bitmap2BitmapSource(errorBitmap);
+                flagGraphics.FillRectangle(System.Drawing.Brushes.Red, 0, 0, 32, 32);
+                errorBitmapImage = Bitmap2BitmapImage(errorBitmap);
             }
 
-            return errorImage;
+            return errorBitmapImage;
         }
 
         public static BitmapSource GetDefaultShortcutIcon()
@@ -152,44 +154,22 @@ namespace TaskbarGroupsEx.Classes
             return retval;
         }
 
-        public static Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        public static BitmapImage Bitmap2BitmapImage(Bitmap bitmap)
         {
-            using (MemoryStream outStream = new MemoryStream())
+            using (var memory = new MemoryStream())
             {
-                BitmapEncoder enc = new BmpBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-                enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+                bitmap.Save(memory, ImageFormat.Png);
+                memory.Position = 0;
 
-                return new Bitmap(bitmap);
-            }
-        }
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
 
-        public static BitmapSource ExtractIconToBitmapSource(string filePath)
-        {
-            if (filePath != null)
-            {
-                Icon? ico = Icon.ExtractAssociatedIcon(filePath);
-                if (ico != null)
-                {
-                    return Imaging.CreateBitmapSourceFromHIcon(ico.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                }
-            }
-            return GetErrorImage();
-        }
-
-        public static BitmapSource ExtractIconToBitmapSource(string filePath, int index)
-        {
-            if (filePath != null)
-            {
-                Icon? ico = Icon.ExtractIcon(filePath, index, 32);
-                if (ico != null)
-                {
-                    return Imaging.CreateBitmapSourceFromHIcon(ico.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                }
-            }
-            
-            return GetErrorImage();
+                return bitmapImage;
+            }   
         }
 
         public static BitmapSource IconPathToBitmapSource(string filePath)
@@ -200,12 +180,15 @@ namespace TaskbarGroupsEx.Classes
                 return Imaging.CreateBitmapSourceFromHIcon(_icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             }
 
-            return GetErrorImage();
+            return GetErrorImageSource();
         }
 
-        public static BitmapSource IconToBitmapSource(Icon icon)
+        public static BitmapSource IconToBitmapSource(Icon? icon)
         {
-            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            if(icon != null)
+                return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+
+            return GetErrorImageSource();
         }
 
         public static void SaveBitmapSourceToFile(BitmapSource bitmap, string filePath)
