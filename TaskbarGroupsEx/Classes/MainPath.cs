@@ -78,26 +78,6 @@ namespace TaskbarGroupsEx.Classes
             return "0.0";
         }
 
-        public static String GetShortcutWorkingDir(String file)
-        {
-            string? dirName = "";
-
-            try
-            {
-                if (System.IO.Path.GetExtension(file).ToLower() == ".lnk")
-                {
-                    dirName = System.IO.Path.GetDirectoryName(ShellLink.GetShortcutWorkingDir(file));
-                }
-                else
-                {
-                    dirName = System.IO.Path.GetDirectoryName(file);
-                }
-            }
-            catch { }
-
-            return dirName != null ? dirName : "";
-        }
-
         [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
         private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, IntPtr hToken, out IntPtr ppszPath);
 
