@@ -33,7 +33,6 @@ namespace TaskbarGroupsEx.GroupItems
     {
         public string mName = "";
         public string mCommand = "";
-        public uint mIconIndex = 0;
         public string mIconPath = "";
 
         public BitmapSource? mIcon;
