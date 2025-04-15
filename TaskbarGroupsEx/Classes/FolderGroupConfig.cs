@@ -298,10 +298,13 @@ namespace TaskbarGroupsEx.Classes
             CreateTaskbarGroupShortcut();
         }
 
-        public void OnFinishConversion(string path)
+        public void OnFinishConversion(string? path)
         {
-            ConfigurationFilePath = $"{(Path.GetFullPath(path))}\\FolderGroupConfig.ini";
-            CreateConfig(LoadIconImage());        
+            if (path != null)
+            {
+                ConfigurationFilePath = $"{(Path.GetFullPath(path))}\\FolderGroupConfig.ini";
+                CreateConfig(LoadIconImage());
+            }
         }
 
         void CreateTaskbarGroupShortcut()
