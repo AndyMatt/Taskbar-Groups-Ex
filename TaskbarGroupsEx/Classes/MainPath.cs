@@ -136,14 +136,17 @@ namespace TaskbarGroupsEx.Classes
             return path;
         }
 
-        public static string CreateNewFolder(string path)
+        public static string? CreateNewFolder(string? path)
         {
-            if (Directory.Exists(path))
+            if (path != null)
             {
-                Directory.Delete(path, true);
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+
+                Directory.CreateDirectory(path);
             }
-               
-            Directory.CreateDirectory(path);
             return path;
         }
 
