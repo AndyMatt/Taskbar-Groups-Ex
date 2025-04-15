@@ -5,12 +5,19 @@ namespace TaskbarGroupsEx.Classes
 {
     public class LegacyCategoryFormat
     {
-        public class Category
+        public class LegacyProgramShortcut
+        {
+            public string FilePath { get; set; } = "";
+            public string name { get; set; } = "";
+            public string Arguments = "";
+            public string IconPath = "";
+        }
+            public class Category
         {
             public string Name = "";
             public string ColorString = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(31, 31, 31));
             public bool allowOpenAll = false;
-            public List<ProgramShortcut> ShortcutList = new List<ProgramShortcut>();
+            public List<LegacyProgramShortcut> ShortcutList = new List<LegacyProgramShortcut>();
             public int Width = 5; // not used aon
             public double Opacity = 10;
         }
@@ -33,13 +40,14 @@ namespace TaskbarGroupsEx.Classes
                     if (oldConfig != null)
                     {
                         newFormatCategory.Name = oldConfig.Name;
-                        newFormatCategory.ShortcutList = oldConfig.ShortcutList;
                         newFormatCategory.CollumnCount = oldConfig.Width;
                         newFormatCategory.allowOpenAll = oldConfig.allowOpenAll;  
                         newFormatCategory.CatagoryBGColor = ConvertColorStringToBGColor(oldConfig);
 
-                        foreach(ProgramShortcut shortcut in newFormatCategory.ShortcutList)
+                        foreach(LegacyProgramShortcut shortcut in oldConfig.ShortcutList)
                         {
+                            //TODO need to Implement
+                            /*
                             string IconPath = MainPath.GetConfigPath() + oldConfig.Name + "\\Icons\\" + Path.GetFileNameWithoutExtension(shortcut.FilePath);
                             if (File.Exists(IconPath + ".png"))
                             {
@@ -49,6 +57,7 @@ namespace TaskbarGroupsEx.Classes
                             {
                                 shortcut.IconPath = Path.GetRelativePath(MainPath.GetConfigPath(), IconPath + "_FolderObjTSKGRoup.png");
                             }
+                            */
                         }
                  
                         bSuccess = true;
