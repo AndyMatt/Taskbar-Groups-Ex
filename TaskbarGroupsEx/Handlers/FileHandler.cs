@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using TaskbarGroupsEx.Classes;
+using static TaskbarGroupsEx.Classes.ConfigFile;
 
 namespace TaskbarGroupsEx.Handlers
 {
@@ -81,6 +82,11 @@ namespace TaskbarGroupsEx.Handlers
                 fileStream.Close();
                 fileStream = null;
             }
+        }
+
+        public void Write(ConfigPropertyContainer propertyContainer, string? subID = null)
+        {
+            Write(propertyContainer.mProperties, subID);
         }
 
         public void Write(List<KeyValuePair<string,string>> listValues, string? subID = null)

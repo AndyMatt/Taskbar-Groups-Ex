@@ -172,6 +172,19 @@ namespace TaskbarGroupsEx.Classes
             var img = new System.Windows.Media.Imaging.BitmapImage(new Uri(filePath));
             return img;
         }
+
+        public static Stack<BitmapSource> CreateMultiSizeIcon(BitmapSource bitmapSource)
+        {
+            Stack<BitmapSource> iconList = new Stack<BitmapSource>();
+
+            double mipSize = IconFactory.MaxIconWidth;
+            while (mipSize > IconFactory.MinIconWidth)
+            {
+                iconList.Push(ImageFunctions.ResizeImage(bitmapSource, mipSize, mipSize) as BitmapSource);
+                mipSize = Math.Round(mipSize / 2.0);
+            }
+            return iconList;
+        }
         //
         // END OF CLASS
         //

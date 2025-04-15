@@ -8,12 +8,11 @@ namespace TaskbarGroupsEx.Classes
     public class IconFactory
     {
         #region constants
-
-        /// Represents the max allowed width of an icon.
         public const int MaxIconWidth = 256;
-
-        /// Represents the max allowed height of an icon.
         public const int MaxIconHeight = 256;
+
+        public const int MinIconWidth = 16;
+        public const int MinIconHeight = 16;
 
         private const ushort HeaderReserved = 0;
         private const ushort HeaderIconType = 1;
@@ -48,9 +47,11 @@ namespace TaskbarGroupsEx.Classes
         /// <exception cref="ArgumentNullException">
         /// Occurs if any of the arguments are null.
 
-        public static void SavePngsAsIcon(IEnumerable<BitmapSource> images, Stream stream)
+        public static void SavePngAsIcon(BitmapSource iconBitmap, Stream stream)
         {
-            if (images == null)
+            Stack<BitmapSource> images = ImageFunctions.CreateMultiSizeIcon(iconBitmap);
+
+            if (images == null || images.Count == 0)
                 throw new ArgumentNullException("images");
             if (stream == null)
                 throw new ArgumentNullException("stream");

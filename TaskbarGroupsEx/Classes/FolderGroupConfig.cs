@@ -14,16 +14,199 @@ using TaskbarGroupsEx.Handlers;
 
 namespace TaskbarGroupsEx.Classes
 {
+    #region ConfigFile
+    public class ConfigFile
+    {
+        public class ConfigPropertyContainer
+        {
+            public List<KeyValuePair<string, string>> mProperties;
+
+            public ConfigPropertyContainer()
+            {
+                mProperties = new List<KeyValuePair<string, string>>();
+            }
+
+            public string? GetProperty(string PropID)
+            {
+                for (int i = 0; i < mProperties.Count; i++)
+                {
+                    if (mProperties[i].Key == PropID)
+                    {
+                        return mProperties[i].Value;
+                    }
+                }
+                return null;
+            }
+
+            private dynamic? GetDynamicProperty<T>(string PropID, T? prop)
+            {
+                string? value = GetProperty(PropID);
+                if (value == null)
+                    return null;
+
+                try
+                {
+                    switch (typeof(T).Name)
+                    {
+                        case "String":
+                            return value;
+                        case "Color":
+                            uint _colorVal = Convert.ToUInt32(value, 16);
+                            return System.Windows.Media.Color.FromArgb((byte)(_colorVal >> 24), (byte)(_colorVal << 8 >> 24), (byte)(_colorVal << 16 >> 24), (byte)(_colorVal << 24 >> 24));
+
+                        case "Int32":
+                            return Int32.Parse(value);
+
+                        case "Boolean":
+                            return Boolean.Parse(value);
+                    }
+                }
+                catch { }
+
+                return null;
+            }
+
+            public void GetProperty<T>(string PropID, ref T prop)
+            {
+                dynamic? result = GetDynamicProperty(PropID, prop);
+                if (result != null)
+                    prop = result;
+            }
+
+            public void WriteProperty(string PropID, string? prop)
+            {
+                if (prop != null && prop != "")
+                {
+                    for (int i = 0; i < mProperties.Count; i++)
+                    {
+                        if (mProperties[i].Key == PropID)
+                        {
+                            mProperties[i] = new KeyValuePair<string, string>(PropID, prop);
+                            return;
+                        }
+                    }
+
+                    mProperties.Add(new KeyValuePair<string, string>(PropID, prop));
+                }
+            }
+        }
+
+        public class GroupItemConfig
+        {
+            public string ID;
+            public ConfigPropertyContainer mProperties;
+
+            public GroupItemConfig(string id)
+            {
+                ID = id;
+                mProperties = new ConfigPropertyContainer();
+            }
+
+            public void GetProperty(string PropID, ref string? prop)
+            {
+                prop = mProperties.GetProperty(PropID);
+            }
+
+            public void WriteProperty(string PropID, string? prop)
+            {
+                mProperties.WriteProperty(PropID, prop);
+            }
+        }
+
+        public List<GroupItemConfig> mGroupItems;
+        public ConfigPropertyContainer mProperties;
+
+        public ConfigFile()
+        {
+            mGroupItems = new List<GroupItemConfig>();
+            mProperties = new ConfigPropertyContainer();
+        }
+
+        public ConfigFile(string Filename)
+        {
+            mGroupItems = new List<GroupItemConfig>();
+            mProperties = new ConfigPropertyContainer();
+            ReadConfigData(Filename);
+        }
+
+        void ReadConfigData(string fileName)
+        {
+            foreach (string line in File.ReadLines(fileName))
+            {
+                var lineData = line.Split('=');
+                if (lineData[0].Contains('.'))
+                {
+                    var ItemProp = lineData[0].Split('.');
+                    GroupItemConfig itemConfig = GetGroupItem(ItemProp[0]);
+                    itemConfig.WriteProperty(ItemProp[1], lineData[1]);
+                }
+                else
+                {
+                    WriteProperty(lineData[0], lineData[1]);
+                }
+            }
+        }
+
+        public void SaveConfigFile(string configFilePath)
+        {
+            FileHandler configFile = new FileHandler(configFilePath);
+            configFile.Write(mProperties);
+            foreach (GroupItemConfig groupItem in mGroupItems)
+            {
+                configFile.Write(groupItem.mProperties, groupItem.ID);
+            }
+            configFile.Close();
+        }
+
+        public GroupItemConfig GetGroupItem(string GroupID)
+        {
+            for (int i = 0; i < mGroupItems.Count; i++)
+            {
+                if (mGroupItems[i].ID == GroupID)
+                    return mGroupItems[i];
+            }
+
+            return AddGroupItem(GroupID);
+        }
+
+        GroupItemConfig AddGroupItem(string GroupID)
+        {
+            GroupItemConfig groupItem = new GroupItemConfig(GroupID);
+            mGroupItems.Add(groupItem);
+            return groupItem;
+        }
+
+        public void GetProperty<T>(string PropID, ref T prop)
+        {
+            mProperties.GetProperty(PropID, ref prop);
+        }
+
+        public void WriteProperty(string PropID, string? prop)
+        {
+            mProperties.WriteProperty(PropID, prop);
+        }
+    }
+    #endregion
+
     public class FolderGroupConfig
     {
-        public string? Name;
+        public string Name = "";
         public ConfigFile? mConfigFile;
         public List<DynamicGroupItem> GroupItemList = new List<DynamicGroupItem>();
         public int CollumnCount = -1;
         public Color CatagoryBGColor = Color.FromArgb(255, 31, 31, 31);
         public bool allowOpenAll = false;
 
-        public string ConfigurationPath = "";
+        public string? ConfigurationPath = null;
+        public string configurationFilePath = "";
+        public string ConfigurationFilePath
+        {
+            get { return this.configurationFilePath; }
+            set { 
+                this.configurationFilePath = value;
+                ConfigurationPath = Path.GetDirectoryName(value); 
+            }
+        }
 
         public static FolderGroupConfig ParseConfiguration(string path)
         {
@@ -40,11 +223,11 @@ namespace TaskbarGroupsEx.Classes
 
         public FolderGroupConfig(string path)
         {
-            ConfigurationPath = Path.GetFullPath(path) + @"\FolderGroupConfig.ini";
+            ConfigurationFilePath = Path.GetFullPath(path) + @"\FolderGroupConfig.ini";
 
-            if (System.IO.File.Exists(ConfigurationPath))
+            if (System.IO.File.Exists(ConfigurationFilePath))
             {
-                ReadConfigData(ConfigurationPath);
+                ReadConfigData(ConfigurationFilePath);
             }
         }
 
@@ -76,7 +259,7 @@ namespace TaskbarGroupsEx.Classes
             }
         }
 
-        void WriteConfigData(string path)
+        void WriteConfigData()
         {
             if (mConfigFile == null)
                 mConfigFile = new ConfigFile();
@@ -94,7 +277,7 @@ namespace TaskbarGroupsEx.Classes
                 GroupItemList[i].OnWrite(itemConfig);
             }
 
-            mConfigFile.SaveConfigFile(path);
+            mConfigFile.SaveConfigFile(ConfigurationFilePath);
         }
 
         private uint ColorToUnsignedInt(System.Windows.Media.Color color)
@@ -103,58 +286,50 @@ namespace TaskbarGroupsEx.Classes
             return parsedColor;
         }
 
-        public string GetName() { return Name ?? ""; }
+        public string GetName() { return Name; }
         public void SetName(string name) { Name = name; }
 
         public void CreateConfig(BitmapSource groupImage)
         {
-            string path = @"config\" + this.Name;
-            System.IO.Directory.CreateDirectory(@path);
-
+            MainPath.CreateNewFolder(ConfigurationPath);
             SaveIcons();
-
-            WriteConfigData(path);
-
-            ImageFunctions.SaveBitmapSourceToFile(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0), path + @"\GroupImage.png");
-            createMultiIcon(groupImage, path + @"\GroupIcon.ico");
-
-            NativeMethods.InstallShortcut(path, $"TaskbarGroupEx.Menu.{this.Name}", "GroupIcon.ico", this.GetName());
-
-            string FolderGroupLnkPath = Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk");
-            System.IO.File.Move($"{path}\\{this.Name}.lnk", FolderGroupLnkPath); // Move .lnk to correct directory
+            SaveGroupBanner(groupImage);
+            WriteConfigData();
+            CreateTaskbarGroupShortcut();
         }
 
         public void OnFinishConversion(string path)
         {
-            File.Delete(path);
-            string? ConfigDirectory = Path.GetDirectoryName(path);
-            if (ConfigDirectory != null)
+            ConfigurationFilePath = $"{(Path.GetFullPath(path))}\\FolderGroupConfig.ini";
+            CreateConfig(LoadIconImage());        
+        }
+
+        void CreateTaskbarGroupShortcut()
+        {
+            if (ConfigurationPath != null)
             {
-                WriteConfigData(ConfigDirectory);
+                NativeMethods.InstallShortcut(ConfigurationPath, $"TaskbarGroupEx.Menu.{this.Name}", "GroupIcon.ico", this.GetName());
+
+                string FolderGroupLnkPath = Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk");
+                if (File.Exists(FolderGroupLnkPath))
+                    File.Delete(FolderGroupLnkPath);
+
+                System.IO.File.Move($"{ConfigurationPath}\\{this.Name}.lnk", FolderGroupLnkPath); // Move .lnk to correct directory
             }
         }
 
         private static void createMultiIcon(BitmapSource iconImage, string filePath)
         {
-            double mipSize = 256.0;
-            Stack<BitmapSource> iconList = new Stack<BitmapSource>();
-
-            while (mipSize > 8.0) /* Minimum Icon Size */
-            {
-                iconList.Push(ImageFunctions.ResizeImage(iconImage, mipSize, mipSize) as BitmapSource);
-                mipSize = Math.Round(mipSize / 2.0);
-            }
-
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                IconFactory.SavePngsAsIcon(iconList.ToArray(), stream);
+                IconFactory.SavePngAsIcon(iconImage, stream);
             }
         }
 
-        public BitmapImage LoadIconImage() // Needed to access img without occupying read/write
+        public BitmapImage LoadIconImage()
         {
-            BitmapImage? bitmapImage = FileHandler.OpenPNG(@"config\" + Name + @"\GroupImage.png");
-            return bitmapImage != null ? bitmapImage : (BitmapImage)ImageFunctions.GetErrorImageSource();
+            BitmapImage? bitmapImage = FileHandler.OpenPNG($"{ConfigurationPath}\\GroupImage.png");
+            return bitmapImage != null ? bitmapImage : ImageFunctions.GetErrorImage();
         }
 
         public string GetRelativeDir(string dir)
@@ -162,199 +337,20 @@ namespace TaskbarGroupsEx.Classes
             return Path.GetRelativePath(MainPath.GetConfigPath(), dir);
         }
 
+        private void SaveGroupBanner(BitmapSource groupImage)
+        {
+            ImageFunctions.SaveBitmapSourceToFile(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0), ConfigurationPath + @"\GroupImage.png");
+            createMultiIcon(groupImage, ConfigurationPath + @"\GroupIcon.ico");
+        }
+
         public void SaveIcons()
         {
-            MainPath.CreateNewFolder(@MainPath.Config + this.Name + "\\Icons\\");
+            MainPath.CreateNewFolder($"{ConfigurationPath}\\Icons\\");
 
             for (int i = 0; i < GroupItemList.Count; i++)
             {
-                GroupItemList[i].SetIconPath(this.Name);
+                GroupItemList[i].SetIconPath(this.Name!);
                 GroupItemList[i].WriteIcon();
-            }
-        }
-        //
-        // END OF CLASS
-        //
-    }
-
-    public class ConfigFile
-    {
-        public class GroupItemConfig
-        {
-            public string ID;
-            public List<KeyValuePair<string, string>> mProperties;
-
-            public GroupItemConfig(string id) { 
-                ID = id;
-                mProperties = new List<KeyValuePair<string, string>>(); 
-            }
-
-            public void GetProperty(string PropID, ref string prop)
-            {
-                for (int i = 0; i < mProperties.Count; i++)
-                {
-                    if (mProperties[i].Key == PropID)
-                        prop = mProperties[i].Value;
-                }
-            }
-
-            public void WriteProperty(string PropID, string? prop)
-            {
-                if (prop != null && prop != "")
-                {
-                    for (int i = 0; i < mProperties.Count; i++)
-                    {
-                        if (mProperties[i].Key == PropID)
-                        {
-                            prop = mProperties[i].Value;
-                            return;
-                        }
-                    }
-
-                    mProperties.Add(new KeyValuePair<string, string>(PropID, prop));
-                }
-            }
-        }
-
-        public List<GroupItemConfig> mGroupItems;
-        public List<KeyValuePair<string, string>> mProperties;
-
-        public ConfigFile()
-        {
-            mGroupItems = new List<GroupItemConfig>();
-            mProperties = new List<KeyValuePair<string, string>>();
-        }
-
-        public ConfigFile(string Filename)
-        {
-            mGroupItems = new List<GroupItemConfig>();
-            mProperties = new List<KeyValuePair<string, string>>();
-            ReadConfigData(Filename);
-        }
-
-        void ReadConfigData(string fileName)
-        {
-            foreach (string line in File.ReadLines(fileName))
-            {
-                var lineData = line.Split('=');
-                if (lineData[0].Contains('.'))
-                {
-                    var ItemProp = lineData[0].Split('.');
-                    GroupItemConfig itemConfig = GetGroupItem(ItemProp[0]);
-                    itemConfig.WriteProperty(ItemProp[1], lineData[1]);
-                }
-                else
-                {
-                    WriteProperty(lineData[0], lineData[1]);
-                }
-            }
-        }
-
-        public void SaveConfigFile(string ConfigDir)
-        {
-            string configFilePath = ConfigDir + @"\FolderGroupConfig.ini";
-            FileHandler configFile = new FileHandler(configFilePath);
-            configFile.Write(mProperties);
-            foreach(GroupItemConfig groupItem in mGroupItems)
-            {
-                configFile.Write(groupItem.mProperties, groupItem.ID);
-            }
-            configFile.Close();
-        }
-
-        public GroupItemConfig GetGroupItem(string GroupID)
-        {
-            for(int i = 0; i < mGroupItems.Count; i++)
-            {
-                if (mGroupItems[i].ID == GroupID)
-                    return mGroupItems[i];
-            }
-
-            return AddGroupItem(GroupID);        
-        }
-
-        GroupItemConfig AddGroupItem(string GroupID)
-        {
-            GroupItemConfig groupItem = new GroupItemConfig(GroupID);
-            mGroupItems.Add(groupItem);
-            return groupItem;
-        }
-
-        private string? GetProperty(string PropID)
-        {
-            for (int i = 0; i < mProperties.Count; i++)
-            {
-                if (mProperties[i].Key == PropID)
-                {
-                    return mProperties[i].Value;
-                }
-            }
-            return null;
-        }
-
-        public void GetProperty(string PropID, ref string? prop)
-        {
-            string? value = GetProperty(PropID);
-            if(value != null)
-            {
-                prop = value;
-            }
-            for (int i = 0; i < mProperties.Count; i++)
-            {
-                if (mProperties[i].Key == PropID)
-                    prop = mProperties[i].Value;
-            }
-        }
-
-        public void GetProperty(string PropID, ref int prop)
-        {
-            string? value = GetProperty(PropID);
-            if (value != null)
-            {
-                int _value;
-                if (Int32.TryParse(value, out _value))
-                    prop = _value;
-            }
-        }
-
-        public void GetProperty(string PropID, ref bool prop)
-        {
-            string? value = GetProperty(PropID);
-            if (value != null)
-            {
-                bool _value;
-                if (Boolean.TryParse(value, out _value))
-                    prop = _value;
-            }
-        }
-
-        public void GetProperty(string PropID, ref Color prop)
-        {
-            string? value = GetProperty(PropID);
-            if (value != null)
-            {
-                uint _value;
-                if (UInt32.TryParse(value, out _value))
-                {
-                    prop = System.Windows.Media.Color.FromArgb((byte)(_value >> 24), (byte)(_value << 8 >> 24), (byte)(_value << 16 >> 24), (byte)(_value << 24 >> 24));
-                }
-            }
-        }
-
-        public void WriteProperty(string PropID, string? prop)
-        {
-            if (prop != null && prop != "")
-            {
-                for (int i = 0; i < mProperties.Count; i++)
-                {
-                    if (mProperties[i].Key == PropID)
-                    {
-                        prop = mProperties[i].Value;
-                        return;
-                    }
-                }
-
-                mProperties.Add(new KeyValuePair<string, string>(PropID, prop));
             }
         }
     }
