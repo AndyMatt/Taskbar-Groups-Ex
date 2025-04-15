@@ -9,6 +9,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using TaskbarGroupsEx.Classes;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using TaskbarGroupsEx.Handlers;
+using TaskbarGroupsEx.GroupItems;
 
 namespace TaskbarGroupsEx
 {
@@ -26,7 +30,8 @@ namespace TaskbarGroupsEx
 
         public static Shell32.Shell shell = new Shell32.Shell();
 
-        private List<ProgramShortcut> shortcutChanged = new List<ProgramShortcut>();
+        private List<DynamicGroupItem> itemChanged = new List<DynamicGroupItem>();
+        public BitmapSource mGroupBanner;
 
         //--------------------------------------
         // CTOR AND LOAD
@@ -45,7 +50,7 @@ namespace TaskbarGroupsEx
             if (category == null)
             {
                 newExt = imageExt.Concat(specialImageExt).ToArray();
-                fgConfig = new FolderGroupConfig { ShortcutList = new List<ProgramShortcut>() };
+                fgConfig = new FolderGroupConfig { GroupItemList = new List<DynamicGroupItem>() };
                 clmnDelete.Width = new GridLength(0.0);
                 radioDark.IsChecked = true;
             }
@@ -55,7 +60,8 @@ namespace TaskbarGroupsEx
 
                 this.Title = "Edit group";
                 pnlAllowOpenAll.IsChecked = fgConfig.allowOpenAll;
-                cmdAddGroupIcon.Source = fgConfig.LoadIconImage();
+                mGroupBanner = fgConfig.LoadIconImage();
+                cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(mGroupBanner, ImageBox.Width, ImageBox.Height);
                 lblNum.Text = fgConfig.CollumnCount.ToString();
                 txtGroupName.Text = Regex.Replace(fgConfig.GetName(), @"(_)+", " ");
 
@@ -78,9 +84,9 @@ namespace TaskbarGroupsEx
                 }
 
                 // Loading existing shortcutpanels
-                for (int i = 0; i < fgConfig.ShortcutList.Count; i++)
+                for (int i = 0; i < fgConfig.GroupItemList.Count; i++)
                 {
-                    LoadShortcut(fgConfig.ShortcutList[i], i);
+                    LoadShortcut(fgConfig.GroupItemList[i], i);
                 }
             }
         }
@@ -96,12 +102,12 @@ namespace TaskbarGroupsEx
         //--------------------------------------
 
         // Load up shortcut panel
-        public void LoadShortcut(ProgramShortcut psc, int position)
+        public void LoadShortcut(DynamicGroupItem groupItem, int position)
         {
             ucProgramShortcut ucPsc = new ucProgramShortcut()
             {
                 MotherForm = this,
-                Shortcut = psc,
+                GroupItem = groupItem,
                 Position = position,
             };
             pnlShortcuts.Children.Add(ucPsc);           
@@ -114,10 +120,9 @@ namespace TaskbarGroupsEx
 
             lblErrorShortcut.Visibility = Visibility.Hidden; // resetting error msg
             
-            if (fgConfig != null && fgConfig.ShortcutList.Count >= 20)
+            if (fgConfig != null && fgConfig.GroupItemList.Count >= 20)
             {
                 lblErrorShortcut.Text = "Max 20 shortcuts in one group";
-                //lblErrorShortcut.BringToFront();
                 lblErrorShortcut.Visibility = Visibility.Visible;
             }
 
@@ -138,10 +143,13 @@ namespace TaskbarGroupsEx
 
             if (openFileDialog.ShowDialog() == true)
             {
-                foreach (String file in openFileDialog.FileNames)
+                List<DynamicGroupItem> groupItems = DragDropHandler.GetFiles(openFileDialog.FileNames) as List<DynamicGroupItem>;
+
+                foreach (DynamicGroupItem groupItem in groupItems)
                 {
-                    addShortcut(file);
+                    addShortcut(groupItem);
                 }
+
                 resetSelection();
             }
 
@@ -154,14 +162,15 @@ namespace TaskbarGroupsEx
 
         private void pnlDragDropExt(object sender, DragEventArgs e)
         {
-            string[] files = GetFilePathFromDropData(e.Data);
-            foreach (string file in files)
+            List<DynamicGroupItem?> GroupItems = DragDropHandler.GetShortcuts(e.Data);
+            foreach (DynamicGroupItem? groupItem in GroupItems)
             {
-                if (file != null && file != "")
+                if(groupItem != null)
                 {
-                    addShortcut(file);                    
+                    addShortcut(groupItem);
                 }
             }
+
             if (pnlShortcuts.Children.Count != 0)
             {
                 pnlScrollViewer.ScrollToBottom();
@@ -171,79 +180,33 @@ namespace TaskbarGroupsEx
 
         }
 
-        private string[] GetFilePathFromDropData(IDataObject dropData)
+
+        private bool addShortcut(DynamicGroupItem groupItem)
         {
-            string[] formats = dropData.GetFormats();
-            List<string> outFiles = new List<string>();
-
-            if (dropData.GetDataPresent(DataFormats.FileDrop))
-            {
-                try
-                {
-                    var filedrop = dropData.GetData(DataFormats.FileDrop);
-                    String[]? files = (String[])filedrop;
-
-                    foreach (var file in files)
-                    {
-                        if(Uri.IsWellFormedUriString(file, UriKind.Absolute) ||
-                            File.Exists(file) || Path.Exists(file))
-                        {  
-                            outFiles.Add(file); 
-                        }
-                    }
-                }
-                catch (Exception exception)
-                {
-                    MessageBox.Show(exception.Message);
-                }
-            }
-            else if (dropData.GetDataPresent("Shell IDList Array"))
-            {
-                outFiles.Add(ShellLink.GetUWPURI(dropData));
-            }
-            else if (dropData.GetDataPresent("text/x-moz-url"))    //Chrome, Firefox
-            {
-                MemoryStream data = (MemoryStream)dropData.GetData("text/x-moz-url");
-                string dataStr = Encoding.Unicode.GetString(data.ToArray());
-                outFiles.Add("url:" + dataStr);
-            }
-
-            for(int i = 0; i < outFiles.Count; i++)
-            {
-                outFiles[i] = MainPath.ParseGuidInPath(outFiles[i]);
-            }
-
-            return outFiles.ToArray();
-        }
-
-        private bool addShortcut(String file)
-        {
-            if (fgConfig == null)
+            if (fgConfig == null || groupItem == null)
                 return false;
-
-            ProgramShortcut? psc = ProgramShortcut.CreateShortcut(file);
-            if(psc != null)
-            {
-                fgConfig.ShortcutList.Add(psc);
-                LoadShortcut(psc, fgConfig.ShortcutList.Count - 1);
-                RefreshProgramControls();
-                return true;
-            }
-
-            return false;
+           
+            fgConfig.GroupItemList.Add(groupItem);
+            LoadShortcut(groupItem, fgConfig.GroupItemList.Count - 1);
+            RefreshProgramControls();
+            return true;
+           
         }
 
-        // Delete shortcut
-        public void DeleteShortcut(ProgramShortcut psc)
+
+        //Delete GroupItem
+        public void DeleteGroupItem(DynamicGroupItem groupItem)
         {
             resetSelection();
 
-            if(fgConfig != null)
-                fgConfig.ShortcutList.Remove(psc);
 
+            if (fgConfig != null)
+                fgConfig.GroupItemList.Remove(groupItem);
+
+  
             resetSelection();
 
-            ucProgramShortcut? _ShortcutControl = FindProgramShortcutControl(psc);
+            ucProgramShortcut? _ShortcutControl = FindProgramShortcutControl(groupItem);
             int ShortcutIndex = pnlShortcuts.Children.IndexOf(_ShortcutControl);
             pnlShortcuts.Children.Remove(_ShortcutControl);
             RefreshProgramControls();
@@ -260,9 +223,9 @@ namespace TaskbarGroupsEx
 
             if (newIndex > -1 && newIndex < (pnlShortcuts.Children.Count))
             {
-                ProgramShortcut programShortcut = fgConfig.ShortcutList[controlIndex];
-                fgConfig.ShortcutList.RemoveAt(controlIndex);
-                fgConfig.ShortcutList.Insert(newIndex, programShortcut);
+                DynamicGroupItem groupItem = fgConfig.GroupItemList[controlIndex];
+                fgConfig.GroupItemList.RemoveAt(controlIndex);
+                fgConfig.GroupItemList.Insert(newIndex, groupItem);
 
                 pnlShortcuts.Children.Remove(shortcut);
                 pnlShortcuts.Children.Insert(newIndex, shortcut);
@@ -326,14 +289,15 @@ namespace TaskbarGroupsEx
             // Checks if the files being added/dropped are an .exe or .lnk in which tye icons need to be extracted/processed
             if (specialImageExt.Contains(imageExtension))
             {
-                imageSource = Classes.ImageFunctions.IconPathToBitmapSource(file);
+                imageSource = ImageFunctions.IconPathToBitmapSource(file);
             }
             else
             {
                 imageSource = ImageFunctions.BitmapSourceFromFile(file);
             }
 
-            cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(imageSource, ImageBox.Width, ImageBox.Height);
+            mGroupBanner = imageSource;
+            cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(mGroupBanner, ImageBox.Width, ImageBox.Height);
             lblAddGroupIcon.Text = "Change group icon";
         }
 
@@ -363,18 +327,10 @@ namespace TaskbarGroupsEx
         // Series of checks to make sure it can be dropped
         private Boolean checkExtensions(DragEventArgs e, String[] exts)
         {
-            if(e.Data.GetDataPresent(DataFormats.FileDrop))
+            if(e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("Shell IDList Array"))
             {
                 e.Effects = DragDropEffects.All;
                 return true;
-            }
-            else if(e.Data.GetDataPresent("Shell IDList Array"))
-            {
-                if (ShellLink.IsValidUWPDrop(e.Data))
-                {
-                    e.Effects = DragDropEffects.All;
-                    return true;
-                }
             }
             else
             {
@@ -423,94 +379,87 @@ namespace TaskbarGroupsEx
 
             resetSelection();
 
-            //List <Directory> directories = 
-
             if (txtGroupName.Text == "Name the new group...") // Verify category name
             {
                 lblErrorTitle.Text = "Must select a name";
                 lblErrorTitle.Visibility = Visibility.Visible;
+                return;
             }
-            else if (IsNew && Directory.Exists(@MainPath.Config + txtGroupName.Text) ||
+            
+            if (IsNew && Directory.Exists(@MainPath.Config + txtGroupName.Text) ||
                      !IsNew && fgConfig.GetName() != txtGroupName.Text && Directory.Exists(@MainPath.Config + txtGroupName.Text))
             {
                 lblErrorTitle.Text = "There is already a group with that name";
                 lblErrorTitle.Visibility = Visibility.Visible;
+                return;
             }
-            else if (!new Regex("^[0-9a-zA-Z \b]+$").IsMatch(txtGroupName.Text))
+            
+            if (!new Regex("^[0-9a-zA-Z \b]+$").IsMatch(txtGroupName.Text))
             {
                 lblErrorTitle.Text = "Name must not have any special characters";
                 lblErrorTitle.Visibility = Visibility.Visible;
+                return;
             }
-            else if (cmdAddGroupIcon.Source == (BitmapImage)Application.Current.Resources["AddWhite"]) // Verify icon
+
+            if (cmdAddGroupIcon.Source == (BitmapImage)Application.Current.Resources["AddWhite"]) // Verify icon
             {
                 lblErrorIcon.Text = "Must select group icon";
                 lblErrorIcon.Visibility = Visibility.Visible;
+                return;
             }
-            else if (fgConfig.ShortcutList.Count == 0) // Verify shortcuts
+
+            if (fgConfig.GroupItemList.Count == 0) // Verify shortcuts
             {
                 lblErrorShortcut.Text = "Must select at least one shortcut";
                 lblErrorShortcut.Visibility = Visibility.Visible;
+                return;
             }
-            else
+            
+            try
             {
-                try
+                if (!IsNew)
                 {
+                    string configPath = @MainPath.Config + fgConfig.GetName();
+                    string shortcutPath = @MainPath.Shortcuts + Regex.Replace(fgConfig.GetName(), @"(_)+", " ") + ".lnk";
 
-                    foreach (ProgramShortcut shortcutModifiedItem in shortcutChanged)
+                    try
                     {
-                        if (!Directory.Exists(shortcutModifiedItem.WorkingDirectory))
+                        using (TransactionScope scope1 = new TransactionScope())
                         {
-                            shortcutModifiedItem.UpdateWorkingDirectory(shortcutModifiedItem.FilePath);
+                            Directory.Delete(configPath, true);
+                            System.IO.File.Delete(shortcutPath);
+                            scope1.Complete();
+                            scope1.Dispose();
                         }
                     }
-
-
-                    if (!IsNew)
+                    catch (Exception ex)
                     {
-                        //
-                        // Delete old config
-                        //
-                        string configPath = @MainPath.Config + fgConfig.GetName();
-                        string shortcutPath = @MainPath.Shortcuts + Regex.Replace(fgConfig.GetName(), @"(_)+", " ") + ".lnk";
-
-                        try
-                        {
-                            using (TransactionScope scope1 = new TransactionScope())
-                            {
-                                Directory.Delete(configPath, true);
-                                System.IO.File.Delete(shortcutPath);
-                                scope1.Complete();
-                                scope1.Dispose();
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            MessageBox.Show("Please close all programs used within the taskbar group in order to save!");
-                            return;
-                        }
+                        MessageBox.Show(ex.Message, "Please close taskbar group windows in order to save!");
+                        return;
                     }
-
-                    // Creating new config
-                    fgConfig.CollumnCount = int.Parse(lblNum.Text);
-
-                    // Normalize string so it can be used in path; remove spaces
-                    fgConfig.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
-
-                    BitmapSource? groupImage = cmdAddGroupIcon.Source as BitmapSource;
-                    if(groupImage == null)
-                    {
-                        groupImage = ImageFunctions.GetErrorImage();
-                    }
-                    fgConfig.CreateConfig(groupImage); // Creating group config files
-                    Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
-
-                    Close();
-                    Client.Reload();
                 }
-                catch (IOException ex)
+
+                // Creating new config
+                fgConfig.CollumnCount = int.Parse(lblNum.Text);
+
+                // Normalize string so it can be used in path; remove spaces
+                fgConfig.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
+
+                BitmapSource? groupImage = mGroupBanner;
+                if (groupImage == null)
                 {
-                    MessageBox.Show(ex.Message);
+                    groupImage = ImageFunctions.GetErrorImageSource();
                 }
+
+                fgConfig.CreateConfig(mGroupBanner); // Creating group config files
+                Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
+
+                Close();
+                Client.Reload();
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -728,8 +677,13 @@ namespace TaskbarGroupsEx
         // Deselect selected program/shortcut
         public void resetSelection()
         {
-            pnlArgumentTextbox.IsEnabled = false;
-            cmdSelectDirectory.IsEnabled = false;
+            txtType.IsEnabled = false;
+            txtName.IsEnabled = false;
+            txtCommand.IsEnabled = false;
+            txtArgs.IsEnabled = false;
+            txtWorkingDir.IsEnabled = false;
+            txtIconPath.IsEnabled = false;
+
             if (selectedShortcut != null)
             {
                 pnlColor.Visibility = Visibility.Visible;
@@ -746,15 +700,36 @@ namespace TaskbarGroupsEx
             selectedShortcut = passedShortcut;
             passedShortcut.ucSelected();
 
-            ProgramShortcut? pShortcut = passedShortcut.Shortcut;
-            if (pShortcut != null)
+            dynamic? pGroupItem = passedShortcut.GroupItem;
+            if (pGroupItem != null)
             {
-                pnlArgumentTextbox.Text = pShortcut.Arguments;
-                pnlArgumentTextbox.IsEnabled = true;
+                //TODO NEEDS REDESIGN
+                txtType.Text = pGroupItem.GetType().Name;
+                txtType.IsEnabled = true;
 
-                pnlWorkingDirectory.Text = pShortcut.WorkingDirectory;
-                pnlWorkingDirectory.IsEnabled = true;
-                cmdSelectDirectory.IsEnabled = true;
+                txtName.Text = pGroupItem.mName;
+                txtName.IsEnabled = true;
+
+                txtCommand.Text = pGroupItem.mCommand;
+                txtCommand.IsEnabled = true;
+
+                try
+                {
+                    txtArgs.Text = pGroupItem.mArguments;
+                    txtArgs.IsEnabled = true;
+                }
+                catch { }
+
+                try
+                {
+                    txtWorkingDir.Text = pGroupItem.mWorkingDirectory;
+                    txtWorkingDir.IsEnabled = true;
+                }
+                catch { }
+
+
+                txtIconPath.Text = pGroupItem.mIconPath;
+                txtIconPath.IsEnabled = true;
 
                 pnlColor.Visibility = Visibility.Hidden;
                 pnlArguments.Visibility = Visibility.Visible;
@@ -763,8 +738,16 @@ namespace TaskbarGroupsEx
 
         private void pnlArgumentTextbox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            /*
             if(fgConfig != null && selectedShortcut != null)
-                fgConfig.ShortcutList[selectedShortcut.Position].Arguments = pnlArgumentTextbox.Text;
+            {
+                BaseGroupItem? groupItem = fgConfig.GroupItemList[selectedShortcut.Position];
+                if (groupItem is ApplicationGroupItem)
+                {
+                    ((ApplicationGroupItem)groupItem).mArguments = pnlArgumentTextbox.Text;
+                }
+            }
+            */
         }
 
         private void pnlArgumentTextbox_KeyDown(object sender, KeyEventArgs e)
@@ -785,32 +768,43 @@ namespace TaskbarGroupsEx
 
         private void cmdSelectDirectory_Click(object sender, RoutedEventArgs e)
         {
+            /*
             if (selectedShortcut == null || fgConfig == null)
                 return;
 
-            String? InitDir = fgConfig.ShortcutList[selectedShortcut.Index].WorkingDirectory;
-            OpenFolderDialog openFileDialog = new OpenFolderDialog
+            BaseGroupItem groupItem = fgConfig.GroupItemList[selectedShortcut.Index];
+            if (groupItem is ApplicationGroupItem)
             {
-                InitialDirectory = InitDir
-            };
+                String? InitDir = ((ApplicationGroupItem)groupItem).mWorkingDirectory;
+                OpenFolderDialog openFileDialog = new OpenFolderDialog
+                {
+                    InitialDirectory = InitDir
+                };
 
-            if (openFileDialog.ShowDialog(this) == true)
-            {
-                pnlWorkingDirectory.Text = fgConfig.ShortcutList[selectedShortcut.Index].WorkingDirectory = openFileDialog.FolderName;
+                if (openFileDialog.ShowDialog(this) == true)
+                {
+                    pnlCommand.Text = ((ApplicationGroupItem)groupItem).mWorkingDirectory = openFileDialog.FolderName;
+                }
             }
+            */
         }
 
         private void pnlWorkingDirectory_TextChanged(object sender, TextChangedEventArgs e)
         {
+            /*
             if (selectedShortcut == null || fgConfig == null)
                 return;
-
-            fgConfig.ShortcutList[selectedShortcut.Position].WorkingDirectory = pnlWorkingDirectory.Text;
-
-            if (!shortcutChanged.Contains(fgConfig.ShortcutList[selectedShortcut.Position]))
+            BaseGroupItem groupItem = fgConfig.GroupItemList[selectedShortcut.Index];
+            if (groupItem is ApplicationGroupItem)
             {
-                shortcutChanged.Add(fgConfig.ShortcutList[selectedShortcut.Position]);
-            }
+                ((ApplicationGroupItem)groupItem).mWorkingDirectory = pnlCommand.Text;
+
+                if (!itemChanged.Contains(groupItem))
+                {
+                    itemChanged.Add(groupItem);
+                }
+            } 
+            */
         }
 
         private void frmGroup_MouseClick(object sender, MouseButtonEventArgs e)
@@ -833,7 +827,7 @@ namespace TaskbarGroupsEx
             return Convert.ToByte(opacity * 255.0 / 100.0);
         }
 
-        public ucProgramShortcut? FindProgramShortcutControl(ProgramShortcut shortcut)
+        public ucProgramShortcut? FindProgramShortcutControl(DynamicGroupItem groupItem)
         {
             foreach (UIElement element in pnlShortcuts.Children)
             {
@@ -843,7 +837,7 @@ namespace TaskbarGroupsEx
                     continue;
                 }
 
-                if (ucPsc.Shortcut == shortcut)
+                if (ucPsc.GroupItem == groupItem)
                     return ucPsc;
             }
 

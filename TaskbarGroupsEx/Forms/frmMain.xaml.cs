@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.GroupItems;
 using TaskbarGroupsEx.User_Controls;
 
 namespace TaskbarGroupsEx.Forms
@@ -43,7 +44,7 @@ namespace TaskbarGroupsEx.Forms
 
             if (Directory.Exists(mPath))
             {
-                this.Icon = ImageFunctions.ExtractIconToBitmapSource(mPath + "\\GroupIcon.ico");
+                this.Icon = ImageFunctions.IconPathToBitmapSource(mPath + "\\GroupIcon.ico");
 
                 ControlList = new List<ucShortcut>();
                 fgConfig = FolderGroupConfig.ParseConfiguration(mPath);
@@ -125,19 +126,19 @@ namespace TaskbarGroupsEx.Forms
 
             if (!Directory.Exists(@MainPath.Config + fgConfig.GetName() + @"\Icons\"))
             {
-                fgConfig.cacheIcons();
+                fgConfig.SaveIcons();
             }
 
-            double columnCount = Math.Ceiling((double)fgConfig.ShortcutList.Count / fgConfig.CollumnCount);
+            double columnCount = Math.Ceiling((double)fgConfig.GroupItemList.Count / fgConfig.CollumnCount);
             pnlShortcutIcons.Height = columnCount * 45 ;
             pnlShortcutIcons.Width = (fgConfig.CollumnCount * 55);
 
-            foreach (ProgramShortcut psc in fgConfig.ShortcutList)
+            foreach (DynamicGroupItem groupItem in fgConfig.GroupItemList)
             {
                 // Building shortcut controls
                 ucShortcut pscPanel = new ucShortcut()
                 {
-                    Psc = psc,
+                    GroupItem = groupItem,
                     MotherForm = this,
                     ThisCategory = fgConfig,
                 };

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.GroupItems;
 
 namespace TaskbarGroupsEx
 {
@@ -20,20 +21,20 @@ namespace TaskbarGroupsEx
             Client = client;
             Category = category;
             lblTitle.Text = Regex.Replace(category.GetName(), @"(_)+", " ");
-            picGroupIcon.Source = category.LoadIconImage();
+            picGroupIcon.Source = ImageFunctions.ResizeImage(category.LoadIconImage(), picGroupIcon.Width, picGroupIcon.Height);
 
             if (!Directory.Exists((@"config\" + category.GetName()) + "\\Icons\\"))
             {
-                category.cacheIcons();
+                category.SaveIcons();
             }
 
-            foreach (ProgramShortcut psc in Category.ShortcutList) // since this is calculating uc height it cant be placed in load
+            foreach (DynamicGroupItem groupItem in Category.GroupItemList) // since this is calculating uc height it cant be placed in load
             {
-                CreateShortcut(psc);
+                CreateShortcut(groupItem);
             }
         }
 
-        private void CreateShortcut(ProgramShortcut programShortcut)
+        private void CreateShortcut(DynamicGroupItem groupItem)
         {
             // creating shortcut picturebox from shortcut
             this.shortcutPanel = new System.Windows.Controls.Image
@@ -45,7 +46,7 @@ namespace TaskbarGroupsEx
             this.shortcutPanel.MouseEnter += new MouseEventHandler((sender, e) => Client.EnterControl(sender, e, this));
             this.shortcutPanel.MouseLeave += new MouseEventHandler((sender, e) => Client.LeaveControl(sender, e, this));
             this.shortcutPanel.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) => OpenFolder(sender, e));
-            this.shortcutPanel.Source = Category.loadImageCache(programShortcut);
+            this.shortcutPanel.Source = groupItem.GetIcon(); //Category.loadImageCache(programShortcut);
 
             this.pnlShortcutIcons.Children.Add(this.shortcutPanel);
         }

@@ -1,23 +1,29 @@
-using System.Drawing;
+using Shell32;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+
+using TaskbarGroupsEx.GroupItems;
+using TaskbarGroupsEx.Handlers;
 
 namespace TaskbarGroupsEx.Classes
 {
     public class FolderGroupConfig
     {
         public string? Name;
-        public List<ProgramShortcut> ShortcutList = new List<ProgramShortcut>();
-        public int CollumnCount;
-        public System.Windows.Media.Color CatagoryBGColor = System.Windows.Media.Color.FromArgb(255, 31, 31, 31);
+        public ConfigFile? mConfigFile;
+        public List<DynamicGroupItem> GroupItemList = new List<DynamicGroupItem>();
+        public int CollumnCount = -1;
+        public Color CatagoryBGColor = Color.FromArgb(255, 31, 31, 31);
         public bool allowOpenAll = false;
 
         public string ConfigurationPath = "";
-        Regex specialCharRegex = new Regex("[*'\",_&#^@]");
 
         public static FolderGroupConfig ParseConfiguration(string path)
         {
@@ -30,7 +36,7 @@ namespace TaskbarGroupsEx.Classes
             return new FolderGroupConfig(path);
         }
 
-        public FolderGroupConfig(){}
+        public FolderGroupConfig() { }
 
         public FolderGroupConfig(string path)
         {
@@ -44,83 +50,57 @@ namespace TaskbarGroupsEx.Classes
 
         void ReadConfigData(string fileName)
         {
-            Dictionary<string, string> data = new Dictionary<string, string>();
-            foreach (string line in File.ReadLines(fileName))
+            mConfigFile = new ConfigFile(fileName);
+            
+            mConfigFile.GetProperty("Name", ref Name);
+            mConfigFile.GetProperty("CollumnCount", ref CollumnCount);
+            if (CollumnCount == -1)
+                throw new Exception("Error While Reading 'CollumnCount' from Configuration File.");
+
+            mConfigFile.GetProperty("CatagoryBGColor", ref CatagoryBGColor);
+            mConfigFile.GetProperty("allowOpenAll", ref allowOpenAll);
+
+            foreach (ConfigFile.GroupItemConfig itemConfig in mConfigFile.mGroupItems)
             {
-                var lineData = line.Split('=');
-                data.Add(lineData[0], lineData[1]);
-            }
-
-            //Name
-            SetName(data["Name"]);
-
-            //Collumn Count
-            if(!Int32.TryParse(data["CollumnCount"], out CollumnCount)) { throw new Exception("Error While Reading 'CollumnCount' from Configuration File."); }
-
-            //Background Color
-            uint bgColor = uint.Parse(data["CatagoryBGColor"], NumberStyles.HexNumber);
-            CatagoryBGColor = ColorFromUnsignedInt(bgColor);
-
-            //AllowOpenAll
-            if (!Boolean.TryParse(data["allowOpenAll"], out allowOpenAll)) { throw new Exception("Error While Reading 'allowOpenAll' from Configuration File."); }
-
-            //Shortcut Count
-            int ShortcutCount = 0;
-            if (!Int32.TryParse(data["ShortcutCount"], out ShortcutCount)) { throw new Exception("Error While Reading 'ShortcutCount' from Configuration File."); }
-
-            for (int i = 0; i < ShortcutCount; i++)
-            {
-                string shortcutKey = "Shortcut" + i.ToString("D3");
-                ProgramShortcut newShortcut = new ProgramShortcut();
-                newShortcut.name = data[shortcutKey + ".Name"];
-                newShortcut.Arguments = data[shortcutKey + ".Arguments"];
-                newShortcut.WorkingDirectory = data[shortcutKey + ".WorkingDirectory"];
-                newShortcut.FilePath = data[shortcutKey + ".FilePath"];
-                newShortcut.IconPath = data[shortcutKey + ".IconPath"];
-
-                if (!data.ContainsKey(shortcutKey + ".Type") || !Enum.TryParse(data[shortcutKey + ".Type"], out newShortcut.type))
+                string ItemType = "";
+                itemConfig.GetProperty("Type", ref ItemType);
+                switch (ItemType)
                 {
-                    throw new Exception($"Error While Reading 'Type' in {shortcutKey} from Configuration File.");
+                    case "Application": GroupItemList.Add(new ApplicationGroupItem(itemConfig)); break;
+                    case "UWP": GroupItemList.Add(new UWPGroupItem(itemConfig)); break;
+                    case "URI": GroupItemList.Add(new URIGroupItem(itemConfig)); break;
+                    case "URL": GroupItemList.Add(new URLGroupItem(itemConfig)); break;
+                    case "File": GroupItemList.Add(new FileGroupItem(itemConfig)); break;
+                    case "Folder": GroupItemList.Add(new FolderGroupItem(itemConfig)); break;
                 }
-
-                ShortcutList.Add(newShortcut);
             }
-
         }
 
         void WriteConfigData(string path)
         {
-            string configFilePath = path + @"\FolderGroupConfig.ini";
-            Dictionary<string, string> data = new Dictionary<string, string>();
-            data["Name"] = GetName();
-            data["CollumnCount"] = CollumnCount.ToString();
-            data["CatagoryBGColor"] = ColorToUnsignedInt(CatagoryBGColor).ToString("X4");
-            data["allowOpenAll"] = allowOpenAll.ToString();
+            if (mConfigFile == null)
+                mConfigFile = new ConfigFile();
 
-            data["ShortcutCount"] = ShortcutList.Count.ToString();
-            for(int i = 0; i < ShortcutList.Count; i++)
+            mConfigFile.WriteProperty("Name", GetName());
+            mConfigFile.WriteProperty("CollumnCount", CollumnCount.ToString());
+            mConfigFile.WriteProperty("CatagoryBGColor", ColorToUnsignedInt(CatagoryBGColor).ToString("X4"));
+            mConfigFile.WriteProperty("allowOpenAll", allowOpenAll.ToString());
+            mConfigFile.WriteProperty("allowOpenAll", allowOpenAll.ToString());
+
+            for (int i = 0; i < GroupItemList.Count; i++)
             {
                 string shortcutKey = "Shortcut" + i.ToString("D3");
-                data[shortcutKey + ".Name"] = ShortcutList[i].name;
-                data[shortcutKey + ".Type"] = ShortcutList[i].type.ToString();
-                data[shortcutKey + ".Arguments"] = ShortcutList[i].Arguments;
-                data[shortcutKey + ".WorkingDirectory"] = ShortcutList[i].WorkingDirectory;
-                data[shortcutKey + ".FilePath"] = ShortcutList[i].FilePath;
-                data[shortcutKey + ".IconPath"] = ShortcutList[i].IconPath;
+                ConfigFile.GroupItemConfig itemConfig = mConfigFile.GetGroupItem(shortcutKey);
+                GroupItemList[i].OnWrite(itemConfig);
             }
 
-            File.WriteAllLines(configFilePath, data.Select(z => $"{z.Key}={z.Value}"));
+            mConfigFile.SaveConfigFile(path);
         }
 
         private uint ColorToUnsignedInt(System.Windows.Media.Color color)
         {
             uint parsedColor = (uint)(color.A << 24) + (uint)(color.R << 16) + (uint)(color.G << 8) + color.B;
             return parsedColor;
-        }
-
-        private System.Windows.Media.Color ColorFromUnsignedInt(uint color)
-        {
-            return System.Windows.Media.Color.FromArgb((byte)(color >> 24), (byte)(color << 8 >> 24), (byte)(color << 16 >> 24), (byte)(color << 24 >> 24));
         }
 
         public string GetName() { return Name ?? ""; }
@@ -131,29 +111,17 @@ namespace TaskbarGroupsEx.Classes
             string path = @"config\" + this.Name;
             System.IO.Directory.CreateDirectory(@path);
 
-            // Build the icon cache
-            cacheIcons();
+            SaveIcons();
 
             WriteConfigData(path);
 
             ImageFunctions.SaveBitmapSourceToFile(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0), path + @"\GroupImage.png");
-            createMultiIcon(ImageFunctions.ResizeImage(groupImage, 256.0, 256.0, true), path + @"\GroupIcon.ico");
+            createMultiIcon(groupImage, path + @"\GroupIcon.ico");
 
-            // Through shellLink.cs class, pass through into the function information on how to construct the icon
-            // Needed due to needing to set a unique AppUserModelID so the shortcut applications don't stack on the taskbar with the main application
-            // Tricks Windows to think they are from different applications even though they are from the same .exe
-            ShellLink.InstallShortcut(
-                Path.GetFullPath(@System.AppDomain.CurrentDomain.FriendlyName),
-                "tjackenpacken.taskbarGroup.menu." + this.Name,
-                 path + " shortcut",
-                 Path.GetFullPath(@path),
-                 Path.GetFullPath(path + @"\GroupIcon.ico"),
-                 path + "\\" + this.Name + ".lnk",
-                 this.GetName()
-            );            
+            NativeMethods.InstallShortcut(path, $"TaskbarGroupEx.Menu.{this.Name}", "GroupIcon.ico", this.GetName());
 
-            System.IO.File.Move(@path + "\\" + this.Name + ".lnk",
-                Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk")); // Move .lnk to correct directory
+            string FolderGroupLnkPath = Path.GetFullPath(@"Shortcuts\" + Regex.Replace(this.GetName(), @"(_)+", " ") + ".lnk");
+            System.IO.File.Move($"{path}\\{this.Name}.lnk", FolderGroupLnkPath); // Move .lnk to correct directory
         }
 
         public void OnFinishConversion(string path)
@@ -169,11 +137,11 @@ namespace TaskbarGroupsEx.Classes
         private static void createMultiIcon(BitmapSource iconImage, string filePath)
         {
             double mipSize = 256.0;
-            List<BitmapSource> iconList = new List<BitmapSource>();
+            Stack<BitmapSource> iconList = new Stack<BitmapSource>();
 
             while (mipSize > 8.0) /* Minimum Icon Size */
             {
-                iconList.Add(ImageFunctions.ResizeImage(iconImage, mipSize, mipSize) as BitmapSource);
+                iconList.Push(ImageFunctions.ResizeImage(iconImage, mipSize, mipSize) as BitmapSource);
                 mipSize = Math.Round(mipSize / 2.0);
             }
 
@@ -185,18 +153,8 @@ namespace TaskbarGroupsEx.Classes
 
         public BitmapImage LoadIconImage() // Needed to access img without occupying read/write
         {
-            string path = @"config\" + Name + @"\GroupImage.png";
-
-            using (MemoryStream ms = new MemoryStream(System.IO.File.ReadAllBytes(path)))
-            {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.StreamSource = ms;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                return bitmap;
-            }
+            BitmapImage? bitmapImage = FileHandler.OpenPNG(@"config\" + Name + @"\GroupImage.png");
+            return bitmapImage != null ? bitmapImage : (BitmapImage)ImageFunctions.GetErrorImageSource();
         }
 
         public string GetRelativeDir(string dir)
@@ -204,116 +162,200 @@ namespace TaskbarGroupsEx.Classes
             return Path.GetRelativePath(MainPath.GetConfigPath(), dir);
         }
 
-        // Goal is to create a folder with icons of the programs pre-cached and ready to be read
-        // Avoids having the icons need to be rebuilt everytime which takes time and resources
-        public void cacheIcons()
+        public void SaveIcons()
         {
+            MainPath.CreateNewFolder(@MainPath.Config + this.Name + "\\Icons\\");
 
-            // Defines the paths for the icons folder
-            string path = @MainPath.Config + this.Name;
-            string iconPath = path + "\\Icons\\";
-
-            // Check and delete current icons folder to completely rebuild the icon cache
-            // Only done on re-edits of the group and isn't done usually
-            if (Directory.Exists(iconPath))
+            for (int i = 0; i < GroupItemList.Count; i++)
             {
-                Directory.Delete(iconPath, true);
+                GroupItemList[i].SetIconPath(this.Name);
+                GroupItemList[i].WriteIcon();
             }
-
-            // Creates the icons folder inside of existing config folder for the group
-            Directory.CreateDirectory(iconPath);
-
-            iconPath = @path + @"\Icons\";
-
-            // Loops through each shortcut added by the user and gets the icon
-            // Writes the icon to the new folder in a .jpg format
-            // Namign scheme for the files are done through Path.GetFileNameWithoutExtension()
-            for (int i = 0; i < ShortcutList.Count; i++)
-            {
-                String filePath = ShortcutList[i].FilePath;
-
-                //ucProgramShortcut programShortcutControl = Application.Current.Windows.["frmGroup"].Controls["pnlShortcuts"].Controls[i] as ucProgramShortcut;
-                ucProgramShortcut? programShortcutControl = null;
-                foreach (Window win in Application.Current.Windows)
-                {
-                    if(win.GetType() == typeof(frmGroup))
-                    {
-                        frmGroup frm = (frmGroup)win;
-                        programShortcutControl = frm.pnlShortcuts.Children[i] as ucProgramShortcut;  
-                    }
-                }
-
-                string iconSavePath;
-
-                /* //case ShortcutType.URI:                
-                string removableChars = Regex.Escape(@"\/:@&'()<>#");
-                string pattern = "[" + removableChars + "]";
-                string iconfileName = Regex.Replace(filePath, pattern, "");
-                 savePath = iconPath + "\\" + iconfileName + ".png";
-                savePath = Path.GetRelativePath(MainPath.GetConfigPath(), savePath);
-                */
-
-                switch (ShortcutList[i].type)
-                {
-                    case ShortcutType.UWP:
-                    case ShortcutType.URI:
-                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(filePath) + ".png");
-                        break;
-
-                    case ShortcutType.Directory:
-                    case ShortcutType.URL:
-                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(ShortcutList[i].name) + ".png");
-                        break;
-
-                    case ShortcutType.Application:
-                    default:
-                        iconSavePath = GetRelativeDir(iconPath + "\\" + GetSafeFileName(Path.GetFileNameWithoutExtension(filePath)) + ".png");
-                        break;
-                }
-
-                ShortcutList[i].IconPath = iconSavePath;
-
-                if (programShortcutControl != null && programShortcutControl.logo != null)
-                {
-                    if (File.Exists(MainPath.GetConfigPath() + iconSavePath))
-                        File.Delete(MainPath.GetConfigPath() + iconSavePath);
-
-                    ImageFunctions.SaveBitmapSourceToFile(programShortcutControl.logo, MainPath.GetConfigPath() + iconSavePath);
-                }
-            }
-        }
-
-        private string GetSafeFileName(string fileName)
-        {
-            string removableChars = Regex.Escape(@"\/:@&'()<>#");
-            string pattern = "[" + removableChars + "]";
-            return Regex.Replace(fileName, pattern, "");
-        }
-
-        // Try to load an iamge from the cache
-        // Takes in a programPath (shortcut) and processes it to the proper file name
-        public BitmapSource loadImageCache(ProgramShortcut shortcutObject)
-        {
-            return this.Name != null ? ImageFunctions.GetShortcutIcon(shortcutObject.GetFullIconPath(this.Name)) : (BitmapImage)ImageFunctions.GetErrorImage();
-        }
-
-        public static string GetPixelFormat(BitmapSource i)
-        {
-            return i.Format.ToString();           
-        }
-
-        public static string GetMimeType(Image i)
-        {
-            var imgguid = i.RawFormat.Guid;
-            foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
-            {
-                if (codec.FormatID == imgguid && codec.FilenameExtension != null)
-                    return codec.FilenameExtension;
-            }
-            return "image/unknown";
         }
         //
         // END OF CLASS
         //
+    }
+
+    public class ConfigFile
+    {
+        public class GroupItemConfig
+        {
+            public string ID;
+            public List<KeyValuePair<string, string>> mProperties;
+
+            public GroupItemConfig(string id) { 
+                ID = id;
+                mProperties = new List<KeyValuePair<string, string>>(); 
+            }
+
+            public void GetProperty(string PropID, ref string prop)
+            {
+                for (int i = 0; i < mProperties.Count; i++)
+                {
+                    if (mProperties[i].Key == PropID)
+                        prop = mProperties[i].Value;
+                }
+            }
+
+            public void WriteProperty(string PropID, string? prop)
+            {
+                if (prop != null && prop != "")
+                {
+                    for (int i = 0; i < mProperties.Count; i++)
+                    {
+                        if (mProperties[i].Key == PropID)
+                        {
+                            prop = mProperties[i].Value;
+                            return;
+                        }
+                    }
+
+                    mProperties.Add(new KeyValuePair<string, string>(PropID, prop));
+                }
+            }
+        }
+
+        public List<GroupItemConfig> mGroupItems;
+        public List<KeyValuePair<string, string>> mProperties;
+
+        public ConfigFile()
+        {
+            mGroupItems = new List<GroupItemConfig>();
+            mProperties = new List<KeyValuePair<string, string>>();
+        }
+
+        public ConfigFile(string Filename)
+        {
+            mGroupItems = new List<GroupItemConfig>();
+            mProperties = new List<KeyValuePair<string, string>>();
+            ReadConfigData(Filename);
+        }
+
+        void ReadConfigData(string fileName)
+        {
+            foreach (string line in File.ReadLines(fileName))
+            {
+                var lineData = line.Split('=');
+                if (lineData[0].Contains('.'))
+                {
+                    var ItemProp = lineData[0].Split('.');
+                    GroupItemConfig itemConfig = GetGroupItem(ItemProp[0]);
+                    itemConfig.WriteProperty(ItemProp[1], lineData[1]);
+                }
+                else
+                {
+                    WriteProperty(lineData[0], lineData[1]);
+                }
+            }
+        }
+
+        public void SaveConfigFile(string ConfigDir)
+        {
+            string configFilePath = ConfigDir + @"\FolderGroupConfig.ini";
+            FileHandler configFile = new FileHandler(configFilePath);
+            configFile.Write(mProperties);
+            foreach(GroupItemConfig groupItem in mGroupItems)
+            {
+                configFile.Write(groupItem.mProperties, groupItem.ID);
+            }
+            configFile.Close();
+        }
+
+        public GroupItemConfig GetGroupItem(string GroupID)
+        {
+            for(int i = 0; i < mGroupItems.Count; i++)
+            {
+                if (mGroupItems[i].ID == GroupID)
+                    return mGroupItems[i];
+            }
+
+            return AddGroupItem(GroupID);        
+        }
+
+        GroupItemConfig AddGroupItem(string GroupID)
+        {
+            GroupItemConfig groupItem = new GroupItemConfig(GroupID);
+            mGroupItems.Add(groupItem);
+            return groupItem;
+        }
+
+        private string? GetProperty(string PropID)
+        {
+            for (int i = 0; i < mProperties.Count; i++)
+            {
+                if (mProperties[i].Key == PropID)
+                {
+                    return mProperties[i].Value;
+                }
+            }
+            return null;
+        }
+
+        public void GetProperty(string PropID, ref string? prop)
+        {
+            string? value = GetProperty(PropID);
+            if(value != null)
+            {
+                prop = value;
+            }
+            for (int i = 0; i < mProperties.Count; i++)
+            {
+                if (mProperties[i].Key == PropID)
+                    prop = mProperties[i].Value;
+            }
+        }
+
+        public void GetProperty(string PropID, ref int prop)
+        {
+            string? value = GetProperty(PropID);
+            if (value != null)
+            {
+                int _value;
+                if (Int32.TryParse(value, out _value))
+                    prop = _value;
+            }
+        }
+
+        public void GetProperty(string PropID, ref bool prop)
+        {
+            string? value = GetProperty(PropID);
+            if (value != null)
+            {
+                bool _value;
+                if (Boolean.TryParse(value, out _value))
+                    prop = _value;
+            }
+        }
+
+        public void GetProperty(string PropID, ref Color prop)
+        {
+            string? value = GetProperty(PropID);
+            if (value != null)
+            {
+                uint _value;
+                if (UInt32.TryParse(value, out _value))
+                {
+                    prop = System.Windows.Media.Color.FromArgb((byte)(_value >> 24), (byte)(_value << 8 >> 24), (byte)(_value << 16 >> 24), (byte)(_value << 24 >> 24));
+                }
+            }
+        }
+
+        public void WriteProperty(string PropID, string? prop)
+        {
+            if (prop != null && prop != "")
+            {
+                for (int i = 0; i < mProperties.Count; i++)
+                {
+                    if (mProperties[i].Key == PropID)
+                    {
+                        prop = mProperties[i].Value;
+                        return;
+                    }
+                }
+
+                mProperties.Add(new KeyValuePair<string, string>(PropID, prop));
+            }
+        }
     }
 }

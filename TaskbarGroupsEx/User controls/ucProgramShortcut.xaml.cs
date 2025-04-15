@@ -6,6 +6,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using TaskbarGroupsEx.Classes;
+using TaskbarGroupsEx.GroupItems;
+using Windows.Management.Deployment;
 
 namespace TaskbarGroupsEx
 {
@@ -14,12 +16,12 @@ namespace TaskbarGroupsEx
     /// </summary>
     public partial class ucProgramShortcut : UserControl
     {
-        public ProgramShortcut? Shortcut { get; set; }
+        public DynamicGroupItem? GroupItem { get; set; }
         public frmGroup? MotherForm { get; set; }
         public int Position { get; set; }
         public int Index = -1;
 
-        public BitmapSource? logo;
+        public BitmapSource? logo; //Can Delete
         public ucProgramShortcut()
         {
             InitializeComponent();
@@ -27,48 +29,11 @@ namespace TaskbarGroupsEx
 
         private void ucProgramShortcut_Loaded(object sender, RoutedEventArgs e)
         {
-            if (Shortcut == null)
+            if(GroupItem == null)
                 return;
 
-            txtShortcutName.Text = Shortcut.name;
-
-            switch(Shortcut.type)
-            {
-                case ShortcutType.UWP:
-                    logo = handleWindowsApp.getWindowsAppIcon(Shortcut.FilePath, true);
-                    break;
-
-                case ShortcutType.URI:
-                    if(MotherForm != null)
-                        logo = ImageFunctions.GetShortcutIcon(Shortcut.GetFullIconPath(MotherForm.GetGroupName()));
-                    break;
-
-                case ShortcutType.Directory:
-                    logo = ImageFunctions.GetFolderIcon(Shortcut.FilePath);
-                    break;
-
-                case ShortcutType.Shortcut:
-                    picShortcut.Source = logo = frmGroup.handleLnkExt(Shortcut.FilePath);
-                    break;
-
-                case ShortcutType.URL:
-                    var task = ImageFunctions.GetFaviconFromURL(Shortcut.FilePath);
-                    task.Wait();
-                    logo = task.Result;
-                    break;
-
-                case ShortcutType.File:
-                case ShortcutType.Application:
-                    Icon? icon = Icon.ExtractAssociatedIcon(Shortcut.FilePath);
-                    if(icon != null)
-                    logo = icon != null ? ImageFunctions.IconToBitmapSource(icon) : ImageFunctions.GetErrorImage();
-                    break;
-            }
-
-            if (logo == null)
-                logo = ImageFunctions.GetDefaultShortcutIcon();
-
-            picShortcut.Source = logo;
+            txtShortcutName.Text = GroupItem.mName;
+            picShortcut.Source = GroupItem.GetIcon();
         }
 
         private void ucProgramShortcut_MouseEnter(object sender, MouseEventArgs e)
@@ -102,8 +67,8 @@ namespace TaskbarGroupsEx
 
         private void cmdDelete_Click(object sender, RoutedEventArgs e)
         {
-            if(MotherForm != null && Shortcut != null)
-                MotherForm.DeleteShortcut(Shortcut);
+            if(MotherForm != null && GroupItem != null)
+                MotherForm.DeleteGroupItem(GroupItem);
         }
 
         // Handle what is selected/deselected when a shortcut is clicked on
@@ -145,8 +110,8 @@ namespace TaskbarGroupsEx
 
         private void txtShortcutName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (Shortcut != null)
-                Shortcut.name = txtShortcutName.Text;
+            if (GroupItem != null)
+                GroupItem.mName = txtShortcutName.Text;
         }
 
         private void ucProgramShortcut_KeyDown(object sender, KeyEventArgs e)
