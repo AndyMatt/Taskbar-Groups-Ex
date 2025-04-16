@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System.Drawing;
 using System.IO;
 using System.Windows;
@@ -21,7 +22,6 @@ namespace TaskbarGroupsEx
         public int Position { get; set; }
         public int Index = -1;
 
-        public BitmapSource? logo; //Can Delete
         public ucProgramShortcut()
         {
             InitializeComponent();
@@ -29,30 +29,30 @@ namespace TaskbarGroupsEx
 
         private void ucProgramShortcut_Loaded(object sender, RoutedEventArgs e)
         {
-            if(GroupItem == null)
+            if (GroupItem == null)
                 return;
 
-            txtShortcutName.Text = GroupItem.mName;
+            txtShortcutName.Content = GroupItem.mName;
             picShortcut.Source = GroupItem.GetIcon();
         }
 
         private void ucProgramShortcut_MouseEnter(object sender, MouseEventArgs e)
         {
-            ucSelected();
+            this.Background = txtShortcutName.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 56, 56, 56));
         }
 
         private void ucProgramShortcut_MouseLeave(object sender, MouseEventArgs e)
         {
             if (MotherForm != null && MotherForm.selectedShortcut != this)
             {
-                ucDeselected();
+                this.Background = txtShortcutName.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 31, 31, 31));
             }
         }
 
         private void cmdNumUp_Click(object sender, RoutedEventArgs e)
         {
             cmdNumUp.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
-            if(MotherForm != null)
+            if (MotherForm != null)
                 MotherForm.RepositionControl(this, -1);
             e.Handled = true;
         }
@@ -60,14 +60,14 @@ namespace TaskbarGroupsEx
         private void cmdNumDown_Click(object sender, RoutedEventArgs e)
         {
             cmdNumDown.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
-            if(MotherForm != null)
+            if (MotherForm != null)
                 MotherForm.RepositionControl(this, 1);
             e.Handled = true;
         }
 
         private void cmdDelete_Click(object sender, RoutedEventArgs e)
         {
-            if(MotherForm != null && GroupItem != null)
+            if (MotherForm != null && GroupItem != null)
                 MotherForm.DeleteGroupItem(GroupItem);
         }
 
@@ -95,60 +95,14 @@ namespace TaskbarGroupsEx
 
         public void ucDeselected()
         {
-            txtShortcutName.Select(0, 0);
-            txtShortcutName.IsEnabled = txtShortcutName.IsTabStop = false;
-            txtShortcutName.IsEnabled = true;
-
             this.Background = txtShortcutName.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 31, 31, 31));
+            ItemBorder.BorderThickness = new Thickness(0.0f);
         }
 
         public void ucSelected()
         {
             this.Background = txtShortcutName.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 56, 56, 56));
-        }
-
-
-        private void txtShortcutName_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (GroupItem != null)
-                GroupItem.mName = txtShortcutName.Text;
-        }
-
-        private void ucProgramShortcut_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                picShortcut.Focus();
-
-
-                e.Handled = true;
-            }
-        }
-
-        private void txtShortcutName_GotFocus(object sender, RoutedEventArgs e)
-        {
-            txtShortcutName.BorderThickness = new Thickness(1.0);
-            if (MotherForm != null)
-            {
-                if (MotherForm.selectedShortcut == this)
-                {
-                    MotherForm.resetSelection();
-                }
-                else
-                {
-                    if (MotherForm.selectedShortcut != null)
-                    {
-                        MotherForm.resetSelection();
-                    }
-
-                    MotherForm.enableSelection(this);
-                }
-            }
-        }  
-
-        private void txtShortcutName_LostFocus(object sender, RoutedEventArgs e)
-        {
-            txtShortcutName.BorderThickness = new Thickness(0.0);
+            ItemBorder.BorderThickness = new Thickness(1.0f);
         }
 
         public void UpdateIndex(int index, bool isLast)
@@ -164,7 +118,7 @@ namespace TaskbarGroupsEx
                 cmdNumUp.IsEnabled = true;
                 cmdNumUp.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
             }
-            
+
             if (isLast)
             {
                 cmdNumDown.IsEnabled = false;
@@ -198,6 +152,74 @@ namespace TaskbarGroupsEx
                 {
                     btn.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
                 }
+            }
+        }
+
+        public BitmapSource OnChangeIcon()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                Title = "Select Item Icon",
+                CheckFileExists = true,
+                CheckPathExists = true,
+                DefaultExt = "img",
+                Filter = "Image files (*.png, *.ico) | *.png; *.ico; ",
+                FilterIndex = 2,
+                RestoreDirectory = true,
+                ReadOnlyChecked = true,
+                DereferenceLinks = false,
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                String imageExtension = System.IO.Path.GetExtension(openFileDialog.FileName).ToLower();
+                try
+                {
+                    if (GroupItem != null)
+                    {
+                        GroupItem.LoadIconFromFile(openFileDialog.FileName);
+                        picShortcut.Source = GroupItem.GetIcon();
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show($"Issue setting {Path.GetFileName(openFileDialog.FileName)} as Icon");
+                }
+            }
+            return GroupItem.GetIcon();
+        }
+
+        public void OnNameChanged(string name)
+        {
+            if (GroupItem != null)
+            {
+                GroupItem.mName = name;
+                txtShortcutName.Content = name;
+            }            
+        }
+
+        public void OnCommandChanged(string command)
+        {
+            if (GroupItem != null)
+            {
+                GroupItem.mCommand = command;
+            }
+        }
+
+        public void OnWorkingDirChanged(string workingDir)
+        {
+            if (GroupItem != null && GroupItem is ApplicationGroupItem)
+            {
+                ((ApplicationGroupItem)GroupItem).mWorkingDirectory = workingDir;
+            }
+        }
+
+        public void OnArgsChanged(string args)
+        {
+            if (GroupItem != null && GroupItem is ApplicationGroupItem)
+            {
+                ((ApplicationGroupItem)GroupItem).mArguments = args;
             }
         }
     }
