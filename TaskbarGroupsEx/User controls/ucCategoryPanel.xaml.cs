@@ -23,7 +23,7 @@ namespace TaskbarGroupsEx
             lblTitle.Text = Regex.Replace(category.GetName(), @"(_)+", " ");
             picGroupIcon.Source = ImageFunctions.ResizeImage(category.LoadIconImage(), picGroupIcon.Width, picGroupIcon.Height);
 
-            if (!Directory.Exists((@"config\" + category.GetName()) + "\\Icons\\"))
+            if (!Directory.Exists($"{category.ConfigurationPath}\\Icons\\"))
             {
                 category.SaveIcons();
             }
