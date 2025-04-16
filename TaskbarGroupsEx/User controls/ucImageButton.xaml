@@ -1,0 +1,18 @@
+﻿<UserControl x:Name="ImageButton" x:Class="TaskbarGroupsEx.ucImageButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TaskbarGroupsEx"
+             mc:Ignorable="d">
+    <Grid MouseEnter="Grid_MouseEnter" MouseLeave="Grid_MouseLeave" MouseDown="Grid_MouseDown" MouseUp="Grid_MouseUp">
+        <Rectangle x:Name="RectImage">
+            <Rectangle.Fill>
+                <SolidColorBrush Color="White"/>
+            </Rectangle.Fill>
+            <Rectangle.OpacityMask>
+                <ImageBrush/>
+            </Rectangle.OpacityMask>
+        </Rectangle>
+    </Grid>
+</UserControl>
