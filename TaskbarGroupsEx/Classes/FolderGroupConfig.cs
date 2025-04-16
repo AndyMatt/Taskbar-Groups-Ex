@@ -261,13 +261,11 @@ namespace TaskbarGroupsEx.Classes
 
         void WriteConfigData()
         {
-            if (mConfigFile == null)
-                mConfigFile = new ConfigFile();
+            mConfigFile = new ConfigFile();
 
             mConfigFile.WriteProperty("Name", GetName());
             mConfigFile.WriteProperty("CollumnCount", CollumnCount.ToString());
             mConfigFile.WriteProperty("CatagoryBGColor", ColorToUnsignedInt(CatagoryBGColor).ToString("X4"));
-            mConfigFile.WriteProperty("allowOpenAll", allowOpenAll.ToString());
             mConfigFile.WriteProperty("allowOpenAll", allowOpenAll.ToString());
 
             for (int i = 0; i < GroupItemList.Count; i++)
