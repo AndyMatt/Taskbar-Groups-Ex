@@ -13,6 +13,10 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using TaskbarGroupsEx.Handlers;
 using TaskbarGroupsEx.GroupItems;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media.Effects;
+using Windows.Devices.Bluetooth;
+using System.Windows.Shapes;
 
 namespace TaskbarGroupsEx
 {
@@ -32,6 +36,8 @@ namespace TaskbarGroupsEx
 
         private List<DynamicGroupItem> itemChanged = new List<DynamicGroupItem>();
         public BitmapSource mGroupBanner;
+
+        private int mCollumnCount;
 
         //--------------------------------------
         // CTOR AND LOAD
@@ -53,6 +59,8 @@ namespace TaskbarGroupsEx
                 fgConfig = new FolderGroupConfig { GroupItemList = new List<DynamicGroupItem>() };
                 clmnDelete.Width = new GridLength(0.0);
                 radioDark.IsChecked = true;
+                mCollumnCount = 4;
+                lblNum.Text = mCollumnCount.ToString();
             }
             else
             {
@@ -62,7 +70,8 @@ namespace TaskbarGroupsEx
                 pnlAllowOpenAll.IsChecked = fgConfig.allowOpenAll;
                 mGroupBanner = fgConfig.LoadIconImage();
                 cmdAddGroupIcon.Source = ImageFunctions.ResizeImage(mGroupBanner, ImageBox.Width, ImageBox.Height);
-                lblNum.Text = fgConfig.CollumnCount.ToString();
+                mCollumnCount = fgConfig.CollumnCount;
+                lblNum.Text = mCollumnCount.ToString();
                 txtGroupName.Text = Regex.Replace(fgConfig.GetName(), @"(_)+", " ");
 
                 Color categoryColor = fgConfig.CatagoryBGColor;
@@ -419,14 +428,13 @@ namespace TaskbarGroupsEx
             {
                 if (!IsNew)
                 {
-                    string configPath = @MainPath.Config + fgConfig.GetName();
                     string shortcutPath = @MainPath.Shortcuts + Regex.Replace(fgConfig.GetName(), @"(_)+", " ") + ".lnk";
 
                     try
                     {
                         using (TransactionScope scope1 = new TransactionScope())
                         {
-                            Directory.Delete(configPath, true);
+                            Directory.Delete(fgConfig.ConfigurationPath!, true);
                             System.IO.File.Delete(shortcutPath);
                             scope1.Complete();
                             scope1.Dispose();
@@ -440,7 +448,7 @@ namespace TaskbarGroupsEx
                 }
 
                 // Creating new config
-                fgConfig.CollumnCount = int.Parse(lblNum.Text);
+                fgConfig.CollumnCount = mCollumnCount;
 
                 // Normalize string so it can be used in path; remove spaces
                 fgConfig.SetName(Regex.Replace(txtGroupName.Text, @"\s+", "_"));
@@ -451,8 +459,17 @@ namespace TaskbarGroupsEx
                     groupImage = ImageFunctions.GetErrorImageSource();
                 }
 
+                fgConfig.GroupItemList.Clear();
+                foreach (ucProgramShortcut item in pnlShortcuts.Children)
+                {
+                    if(item.GroupItem != null)
+                        fgConfig.GroupItemList.Add(item.GroupItem);
+                }
+
+
                 fgConfig.CreateConfig(mGroupBanner); // Creating group config files
-                Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
+                //Client.LoadCategory(System.IO.Path.GetFullPath(@"config\" + fgConfig.GetName())); // Loading visuals
+                Client.LoadCategory(System.IO.Path.GetFullPath(fgConfig.ConfigurationPath!)); // Loading visuals
 
                 Close();
                 Client.Reload();
@@ -508,41 +525,36 @@ namespace TaskbarGroupsEx
         //--------------------------------------
 
         // Change category width
-        private void cmdWidthUp_Click(object sender, RoutedEventArgs e)
+        private void cmdWidthUp_Click(object sender, MouseButtonEventArgs e)
         {
             resetSelection();
 
-            int num = int.Parse(lblNum.Text);
-            if (num > 19)
+            lblErrorNum.Visibility = Visibility.Hidden;
+
+            if (mCollumnCount == 20)
             {
-                lblErrorNum.Text = "Max width";
+                lblErrorNum.Text = "Maximum Width is 20";
                 lblErrorNum.Visibility = Visibility.Visible;
             }
-            else
-            {
-                num++;
-                lblErrorNum.Visibility = Visibility.Hidden;
-                lblNum.Text = num.ToString();
-            }
 
+            mCollumnCount = Math.Clamp(mCollumnCount + 1, 1, 20);
+            lblNum.Text = mCollumnCount.ToString();
         }
 
-        private void cmdWidthDown_Click(object sender, RoutedEventArgs e)
+        private void cmdWidthDown_Click(object sender, MouseButtonEventArgs e)
         {
             resetSelection();
 
-            int num = int.Parse(lblNum.Text);
-            if (num == 1)
+            lblErrorNum.Visibility = Visibility.Hidden;
+
+            if (mCollumnCount == 1)
             {
-                lblErrorNum.Text = "Width cant be less than 1";
+                lblErrorNum.Text = "Minimum Width is 1";
                 lblErrorNum.Visibility = Visibility.Visible;
             }
-            else
-            {
-                num--;
-                lblErrorNum.Visibility = Visibility.Hidden;
-                lblNum.Text = num.ToString();
-            }
+
+            mCollumnCount = Math.Clamp(mCollumnCount - 1, 1, 20);
+            lblNum.Text = mCollumnCount.ToString();
         }
 
         // Color radio buttons
@@ -582,7 +594,7 @@ namespace TaskbarGroupsEx
         }
 
         // Opacity buttons
-        private void numOpacUp_Click(object sender, RoutedEventArgs e)
+        private void numOpacUp_Click(object sender, MouseButtonEventArgs e)
         {
             if (fgConfig == null)
                 return;
@@ -591,7 +603,7 @@ namespace TaskbarGroupsEx
             UpdateOpacityControls(opacity);
         }
 
-        private void numOpacDown_Click(object sender, RoutedEventArgs e)
+        private void numOpacDown_Click(object sender, MouseButtonEventArgs e)
         {
             if (fgConfig == null)
                 return;
@@ -623,8 +635,9 @@ namespace TaskbarGroupsEx
             fgConfig.CatagoryBGColor.A = (byte)(opacity * 255 / 100);
             pnlCustomColor.Fill = new SolidColorBrush(fgConfig.CatagoryBGColor);
 
-            _ = opacity == 0 ? DisableOpacityButton(numOpacDown) : EnableOpacityButton(numOpacDown);
-            _ = opacity == 100 ? DisableOpacityButton(numOpacUp) : EnableOpacityButton(numOpacUp);
+            _ = opacity == 0 ? numOpacDown.Disable() : numOpacDown.Enable();
+            _ = opacity == 100 ? numOpacUp.Disable() : numOpacUp.Enable();
+            //_ = opacity == 100 ? DisableOpacityButton(numOpacUp) : EnableOpacityButton(numOpacUp);
         }
 
         //--------------------------------------
@@ -677,17 +690,11 @@ namespace TaskbarGroupsEx
         // Deselect selected program/shortcut
         public void resetSelection()
         {
-            txtType.IsEnabled = false;
-            txtName.IsEnabled = false;
-            txtCommand.IsEnabled = false;
-            txtArgs.IsEnabled = false;
-            txtWorkingDir.IsEnabled = false;
-            txtIconPath.IsEnabled = false;
+            pnlItemProperties.Visibility = Visibility.Hidden;
+            pnlSettings.Visibility = Visibility.Visible;
 
             if (selectedShortcut != null)
             {
-                pnlColor.Visibility = Visibility.Visible;
-                pnlArguments.Visibility = Visibility.Hidden;
                 selectedShortcut.ucDeselected();
                 selectedShortcut = null;
             }
@@ -703,60 +710,25 @@ namespace TaskbarGroupsEx
             dynamic? pGroupItem = passedShortcut.GroupItem;
             if (pGroupItem != null)
             {
-                //TODO NEEDS REDESIGN
-                txtType.Text = pGroupItem.GetType().Name;
-                txtType.IsEnabled = true;
+                groupBoxItem.Header = pGroupItem.GetGroupType().ToString();
+                textBoxName.Text = pGroupItem.mName;
+                textBoxCommand.Text = pGroupItem.mCommand;
+                ImageIcon.Source = pGroupItem.mIcon;
 
-                txtName.Text = pGroupItem.mName;
-                txtName.IsEnabled = true;
 
-                txtCommand.Text = pGroupItem.mCommand;
-                txtCommand.IsEnabled = true;
-
-                try
+                if (pGroupItem is ApplicationGroupItem)
                 {
-                    txtArgs.Text = pGroupItem.mArguments;
-                    txtArgs.IsEnabled = true;
+                    pnlApplicationProperties.Visibility = Visibility.Visible;
+                    textBoxArgs.Text = pGroupItem.mArguments;
+                    textBoxWorkingDir.Text = pGroupItem.mWorkingDirectory;
                 }
-                catch { }
-
-                try
+                else
                 {
-                    txtWorkingDir.Text = pGroupItem.mWorkingDirectory;
-                    txtWorkingDir.IsEnabled = true;
+                    pnlApplicationProperties.Visibility = Visibility.Hidden;
                 }
-                catch { }
 
-
-                txtIconPath.Text = pGroupItem.mIconPath;
-                txtIconPath.IsEnabled = true;
-
-                pnlColor.Visibility = Visibility.Hidden;
-                pnlArguments.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void pnlArgumentTextbox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            /*
-            if(fgConfig != null && selectedShortcut != null)
-            {
-                BaseGroupItem? groupItem = fgConfig.GroupItemList[selectedShortcut.Position];
-                if (groupItem is ApplicationGroupItem)
-                {
-                    ((ApplicationGroupItem)groupItem).mArguments = pnlArgumentTextbox.Text;
-                }
-            }
-            */
-        }
-
-        private void pnlArgumentTextbox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                lblAddGroupIcon.Focus();
-
-                e.Handled = true;
+                pnlItemProperties.Visibility = Visibility.Visible;
+                pnlSettings.Visibility = Visibility.Hidden;
             }
         }
 
@@ -764,47 +736,6 @@ namespace TaskbarGroupsEx
         {
             if(fgConfig != null)
                 fgConfig.allowOpenAll = pnlAllowOpenAll.IsChecked == true ? true : false;
-        }
-
-        private void cmdSelectDirectory_Click(object sender, RoutedEventArgs e)
-        {
-            /*
-            if (selectedShortcut == null || fgConfig == null)
-                return;
-
-            BaseGroupItem groupItem = fgConfig.GroupItemList[selectedShortcut.Index];
-            if (groupItem is ApplicationGroupItem)
-            {
-                String? InitDir = ((ApplicationGroupItem)groupItem).mWorkingDirectory;
-                OpenFolderDialog openFileDialog = new OpenFolderDialog
-                {
-                    InitialDirectory = InitDir
-                };
-
-                if (openFileDialog.ShowDialog(this) == true)
-                {
-                    pnlCommand.Text = ((ApplicationGroupItem)groupItem).mWorkingDirectory = openFileDialog.FolderName;
-                }
-            }
-            */
-        }
-
-        private void pnlWorkingDirectory_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            /*
-            if (selectedShortcut == null || fgConfig == null)
-                return;
-            BaseGroupItem groupItem = fgConfig.GroupItemList[selectedShortcut.Index];
-            if (groupItem is ApplicationGroupItem)
-            {
-                ((ApplicationGroupItem)groupItem).mWorkingDirectory = pnlCommand.Text;
-
-                if (!itemChanged.Contains(groupItem))
-                {
-                    itemChanged.Add(groupItem);
-                }
-            } 
-            */
         }
 
         private void frmGroup_MouseClick(object sender, MouseButtonEventArgs e)
@@ -820,11 +751,6 @@ namespace TaskbarGroupsEx
         private void pnlDragDropLeaveImg(object sender, DragEventArgs e)
         {
             pnlGroupIcon.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 31, 31, 31));
-        }
-
-        private byte GetOpacity(double opacity)
-        {
-            return Convert.ToByte(opacity * 255.0 / 100.0);
         }
 
         public ucProgramShortcut? FindProgramShortcutControl(DynamicGroupItem groupItem)
@@ -858,9 +784,53 @@ namespace TaskbarGroupsEx
             }
         }
 
-        public string GetGroupName()
+        private void pnl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            return txtGroupName.Text;
+            if(sender is Grid)
+            {
+                ((Grid)sender).Height = ((Grid)sender).IsVisible ? Double.NaN : 0;
+            }
+        }
+
+        private void ImageIcon_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (selectedShortcut != null)
+            {
+                ImageIcon.Source = selectedShortcut.OnChangeIcon();
+            }
+            e.Handled = true;
+        }
+
+        private void textBoxName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (selectedShortcut != null)
+            {
+                selectedShortcut.OnNameChanged(textBoxName.Text);
+            }
+        }
+
+        private void textBoxCommand_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (selectedShortcut != null)
+            {
+                selectedShortcut.OnCommandChanged(textBoxCommand.Text);
+            }
+        }
+
+        private void textBoxArgs_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (selectedShortcut != null)
+            {
+                selectedShortcut.OnArgsChanged(textBoxArgs.Text);
+            }
+        }
+
+        private void textBoxWorkingDir_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (selectedShortcut != null)
+            {
+                selectedShortcut.OnWorkingDirChanged(textBoxWorkingDir.Text);
+            }
         }
     }
 }
